@@ -1,26 +1,34 @@
 #include <math.h>
-#include <ros/ros.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <chrono>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/synchronizer.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/Joy.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <std_msgs/Float32.h>
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include <sensor_msgs/msg/joy.hpp>
+#include <std_msgs/msg/float32.hpp>
 
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_datatypes.h>
+#include "tf2/transform_datatypes.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
+
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "rmw/types.h"
+#include "rmw/qos_profiles.h"
+
 
 using namespace std;
 
@@ -104,10 +112,10 @@ float sinVehicleYaw = 0, cosVehicleYaw = 0;
 pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
 
 // state estimation callback function
-void odometryHandler(const nav_msgs::Odometry::ConstPtr &odom) {
+void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
   double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = odom->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w))
+  geometry_msgs::msg::Quaternion geoQuat = odom->pose.pose.orientation;
+  tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w))
       .getRPY(roll, pitch, yaw);
 
   vehicleRoll = roll;
@@ -138,9 +146,9 @@ void odometryHandler(const nav_msgs::Odometry::ConstPtr &odom) {
 }
 
 // registered laser scan callback function
-void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloud2) {
-  laserCloudTime = laserCloud2->header.stamp.toSec();
-
+void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2) {
+  laserCloudTime = std::chrono::duration<double>(std::chrono::nanoseconds(laserCloud2->header.stamp.nanosec)).count();
+  // https://github.com/ros2/rclcpp/pull/526
   if (!systemInited) {
     systemInitTime = laserCloudTime;
     systemInited = true;
@@ -176,7 +184,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloud2) {
 }
 
 // joystick callback function
-void joystickHandler(const sensor_msgs::Joy::ConstPtr &joy) {
+void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy) {
   if (joy->buttons[5] > 0.5) {
     noDataInited = 0;
     clearingCloud = true;
@@ -184,57 +192,65 @@ void joystickHandler(const sensor_msgs::Joy::ConstPtr &joy) {
 }
 
 // cloud clearing callback function
-void clearingHandler(const std_msgs::Float32::ConstPtr &dis) {
+void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis) {
   noDataInited = 0;
   clearingDis = dis->data;
   clearingCloud = true;
 }
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "terrainAnalysis");
-  ros::NodeHandle nh;
-  ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  // ros::init(argc, argv, "terrainAnalysis");
+  // ros::NodeHandle nh;
+  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  rclcpp::init(argc, argv);
+  auto nh = rclcpp::Node::make_shared("terrainAnalysis");
 
-  nhPrivate.getParam("scanVoxelSize", scanVoxelSize);
-  nhPrivate.getParam("decayTime", decayTime);
-  nhPrivate.getParam("noDecayDis", noDecayDis);
-  nhPrivate.getParam("clearingDis", clearingDis);
-  nhPrivate.getParam("useSorting", useSorting);
-  nhPrivate.getParam("quantileZ", quantileZ);
-  nhPrivate.getParam("considerDrop", considerDrop);
-  nhPrivate.getParam("limitGroundLift", limitGroundLift);
-  nhPrivate.getParam("maxGroundLift", maxGroundLift);
-  nhPrivate.getParam("clearDyObs", clearDyObs);
-  nhPrivate.getParam("minDyObsDis", minDyObsDis);
-  nhPrivate.getParam("minDyObsAngle", minDyObsAngle);
-  nhPrivate.getParam("minDyObsRelZ", minDyObsRelZ);
-  nhPrivate.getParam("minDyObsVFOV", minDyObsVFOV);
-  nhPrivate.getParam("maxDyObsVFOV", maxDyObsVFOV);
-  nhPrivate.getParam("minDyObsPointNum", minDyObsPointNum);
-  nhPrivate.getParam("noDataObstacle", noDataObstacle);
-  nhPrivate.getParam("noDataBlockSkipNum", noDataBlockSkipNum);
-  nhPrivate.getParam("minBlockPointNum", minBlockPointNum);
-  nhPrivate.getParam("vehicleHeight", vehicleHeight);
-  nhPrivate.getParam("voxelPointUpdateThre", voxelPointUpdateThre);
-  nhPrivate.getParam("voxelTimeUpdateThre", voxelTimeUpdateThre);
-  nhPrivate.getParam("minRelZ", minRelZ);
-  nhPrivate.getParam("maxRelZ", maxRelZ);
-  nhPrivate.getParam("disRatioZ", disRatioZ);
+  nh->get_parameter("scanVoxelSize", scanVoxelSize);
+  nh->get_parameter("decayTime", decayTime);
+  nh->get_parameter("noDecayDis", noDecayDis);
+  nh->get_parameter("clearingDis", clearingDis);
+  nh->get_parameter("useSorting", useSorting);
+  nh->get_parameter("quantileZ", quantileZ);
+  nh->get_parameter("considerDrop", considerDrop);
+  nh->get_parameter("limitGroundLift", limitGroundLift);
+  nh->get_parameter("maxGroundLift", maxGroundLift);
+  nh->get_parameter("clearDyObs", clearDyObs);
+  nh->get_parameter("minDyObsDis", minDyObsDis);
+  nh->get_parameter("minDyObsAngle", minDyObsAngle);
+  nh->get_parameter("minDyObsRelZ", minDyObsRelZ);
+  nh->get_parameter("minDyObsVFOV", minDyObsVFOV);
+  nh->get_parameter("maxDyObsVFOV", maxDyObsVFOV);
+  nh->get_parameter("minDyObsPointNum", minDyObsPointNum);
+  nh->get_parameter("noDataObstacle", noDataObstacle);
+  nh->get_parameter("noDataBlockSkipNum", noDataBlockSkipNum);
+  nh->get_parameter("minBlockPointNum", minBlockPointNum);
+  nh->get_parameter("vehicleHeight", vehicleHeight);
+  nh->get_parameter("voxelPointUpdateThre", voxelPointUpdateThre);
+  nh->get_parameter("voxelTimeUpdateThre", voxelTimeUpdateThre);
+  nh->get_parameter("minRelZ", minRelZ);
+  nh->get_parameter("maxRelZ", maxRelZ);
+  nh->get_parameter("disRatioZ", disRatioZ);
 
-  ros::Subscriber subOdometry =
-      nh.subscribe<nav_msgs::Odometry>("/state_estimation", 5, odometryHandler);
+  // ros::Subscriber subOdometry =
+  //     nh.subscribe<nav_msgs::Odometry>("/state_estimation", 5, odometryHandler);
+  auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(
-      "/registered_scan", 5, laserCloudHandler);
+  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(
+  //     "/registered_scan", 5, laserCloudHandler);
+  auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  ros::Subscriber subJoystick =
-      nh.subscribe<sensor_msgs::Joy>("/joy", 5, joystickHandler);
+  // ros::Subscriber subJoystick =
+  //     nh.subscribe<sensor_msgs::Joy>("/joy", 5, joystickHandler);
+  auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
 
-  ros::Subscriber subClearing =
-      nh.subscribe<std_msgs::Float32>("/map_clearing", 5, clearingHandler);
 
-  ros::Publisher pubLaserCloud =
-      nh.advertise<sensor_msgs::PointCloud2>("/terrain_map", 2);
+  // ros::Subscriber subClearing =
+  //     nh.subscribe<std_msgs::Float32>("/map_clearing", 5, clearingHandler);
+  auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/map_clearing", 5, clearingHandler);
+
+  // ros::Publisher pubLaserCloud =
+  //     nh.advertise<sensor_msgs::PointCloud2>("/terrain_map", 2);
+  auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map", 2);
 
   for (int i = 0; i < terrainVoxelNum; i++) {
     terrainVoxelCloud[i].reset(new pcl::PointCloud<pcl::PointXYZI>());
@@ -242,11 +258,13 @@ int main(int argc, char **argv) {
 
   downSizeFilter.setLeafSize(scanVoxelSize, scanVoxelSize, scanVoxelSize);
 
-  ros::Rate rate(100);
-  bool status = ros::ok();
+  // ros::Rate rate(100);
+  rclcpp::Rate rate(100);
+  // bool status = ros::ok();
+  bool status = rclcpp::ok();
   while (status) {
-    ros::spinOnce();
-
+    // ros::spinOnce();
+    rclcpp::spin_some(nh);
     if (newlaserCloud) {
       newlaserCloud = false;
 
@@ -643,14 +661,16 @@ int main(int argc, char **argv) {
       clearingCloud = false;
 
       // publish points with elevation
-      sensor_msgs::PointCloud2 terrainCloud2;
+      sensor_msgs::msg::PointCloud2 terrainCloud2;
       pcl::toROSMsg(*terrainCloudElev, terrainCloud2);
-      terrainCloud2.header.stamp = ros::Time().fromSec(laserCloudTime);
+      // terrainCloud2.header.stamp = ros::Time().fromSec(laserCloudTime);
+      terrainCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
       terrainCloud2.header.frame_id = "map";
-      pubLaserCloud.publish(terrainCloud2);
+      pubLaserCloud->publish(terrainCloud2);
     }
 
-    status = ros::ok();
+    // status = ros::ok();
+    status = rclcpp::ok();
     rate.sleep();
   }
 
