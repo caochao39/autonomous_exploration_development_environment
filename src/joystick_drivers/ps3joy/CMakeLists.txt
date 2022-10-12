@@ -45,9 +45,6 @@ install(FILES diagnostics.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-catkin_install_python(PROGRAMS
-  scripts/ps3joy.py
-  scripts/ps3joy_node.py
-  scripts/ps3joysim.py
+install(PROGRAMS scripts/ps3joy.py scripts/ps3joy_node.py scripts/ps3joysim.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

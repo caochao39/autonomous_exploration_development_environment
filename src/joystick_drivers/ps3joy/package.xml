@@ -1,6 +1,6 @@
 <package format="2">
   <name>ps3joy</name>
-  <version>1.15.0</version>
+  <version>2.0.0</version>
   <license>BSD</license>
 
   <description>
@@ -30,7 +30,7 @@
   <depend>diagnostic_msgs</depend>
   <depend>joystick</depend>
   <depend>libusb-dev</depend>
-  <depend>python3-bluez</depend>
+  <depend>python-bluez</depend>
   <depend>rosgraph</depend>
   <depend>rospy</depend>
   <depend>sensor_msgs</depend>
