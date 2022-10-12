@@ -51,6 +51,14 @@ public:
   LoamInterface()
   : Node("loamInterface")
   {
+    // Declare Parameters
+    this->declare_parameter<std::string>("stateEstimationTopic", stateEstimationTopic);
+    this->declare_parameter<std::string>("registeredScanTopic", registeredScanTopic);
+    this->declare_parameter<bool>("flipStateEstimation", flipStateEstimation);
+    this->declare_parameter<bool>("flipRegisteredScan", flipRegisteredScan);
+    this->declare_parameter<bool>("sendTF", sendTF);
+    this->declare_parameter<bool>("reverseTF", reverseTF);
+
     // Initialize Parameters
     this->get_parameter("stateEstimationTopic", stateEstimationTopic);
     this->get_parameter("registeredScanTopic", registeredScanTopic);
