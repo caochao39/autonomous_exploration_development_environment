@@ -5,10 +5,10 @@ URDF description and Gazebo plugins to simulate Velodyne laser scanners
 
 # Features
 * URDF with colored meshes
-* Gazebo plugin based on [gazebo_plugins/gazebo_ros_block_laser](https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/src/gazebo_ros_block_laser.cpp)
+* Gazebo plugin based on [gazebo_plugins/gazebo_ros_ray_sensor](https://github.com/ros-simulation/gazebo_ros_pkgs/blob/foxy/gazebo_plugins/src/gazebo_ros_ray_sensor.cpp)
 * Publishes PointCloud2 with same structure (x, y, z, intensity, ring, time)
 * Simulated Gaussian noise
-* GPU acceleration ([with a modern Gazebo build](gazebo_upgrade.md))
+* GPU acceleration (with known issues)
 * Supported models:
     * [VLP-16](velodyne_description/urdf/VLP-16.urdf.xacro)
     * [HDL-32E](velodyne_description/urdf/HDL-32E.urdf.xacro)
@@ -34,16 +34,16 @@ URDF description and Gazebo plugins to simulate Velodyne laser scanners
 
 # Known Issues
 * At full sample resolution, Gazebo can take up to 30 seconds to load the VLP-16 pluggin, 60 seconds for the HDL-32E
-* With the default Gazebo version shipped with ROS, ranges are incorrect when accelerated with the GPU option ([issue](https://bitbucket.org/osrf/gazebo/issues/946/),[image](img/gpu.png))
-    * Solution: Upgrade to a [modern Gazebo version](gazebo_upgrade.md)
+* When accelerated with the GPU option, ranges are heavily quantized ([image](img/gpu.png))
+    * Solution: Use CPU instead of GPU
 * Gazebo cannot maintain 10Hz with large pointclouds
     * Solution: User can reduce number of points (samples) or frequency (hz) in the urdf parameters, see [example.urdf.xacro](velodyne_description/urdf/example.urdf.xacro)
 * Gazebo crashes when updating HDL-32E sensors with default number of points. "Took over 1.0 seconds to update a sensor."
     * Solution: User can reduce number of points in urdf (same as above)
 
 # Example Gazebo Robot
-```roslaunch velodyne_description example.launch```
+```ros2 launch velodyne_description example.launch.py```
 
 # Example Gazebo Robot (with GPU)
-```roslaunch velodyne_description example.launch gpu:=true```
+```ros2 launch velodyne_description example.launch.py gpu:=true```
 

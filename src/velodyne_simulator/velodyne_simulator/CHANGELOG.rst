@@ -2,6 +2,26 @@
 Changelog for package velodyne_simulator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.2 (2021-12-27)
+------------------
+
+2.0.1 (2021-10-14)
+------------------
+* Remove unused ament_lint_auto that was causing build error
+* Contributors: Kevin Hallenbeck
+
+2.0.0 (2021-10-12)
+------------------
+* Merged in ROS2 Foxy support (pull request #14)
+  * Remove support for old Gazebo versions
+  * Lazy subscriber using timer in the absence of publisher connection callback
+  * Python launch file
+  * Add env-hooks for GAZEBO_MODEL_PATH
+* Contributors: Kevin Hallenbeck, Gonzalo de Pedro, Joep Tool
+
+1.0.12 (2021-03-30)
+-------------------
+
 1.0.11 (2021-02-23)
 -------------------
 

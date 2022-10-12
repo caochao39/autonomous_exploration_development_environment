@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>velodyne_description</name>
-  <version>1.0.11</version>
+  <version>2.0.2</version>
   <description>
     URDF and meshes describing Velodyne laser scanners.
   </description>
@@ -13,9 +13,14 @@
   <url type="repository">https://bitbucket.org/dataspeedinc/velodyne_simulator</url>
   <url type="bugtracker">https://bitbucket.org/dataspeedinc/velodyne_simulator/issues</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <exec_depend>urdf</exec_depend>
   <exec_depend>xacro</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 
 </package>

@@ -32,38 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <velodyne_gazebo_plugins/GazeboRosVelodyneLaser.h>
+#include <velodyne_gazebo_plugins/GazeboRosVelodyneLaser.hpp>
+#include <gazebo_ros/utils.hpp>
 
 #include <algorithm>
-#include <assert.h>
 
-#include <gazebo/physics/World.hh>
 #include <gazebo/sensors/Sensor.hh>
-#include <sdf/sdf.hh>
-#include <sdf/Param.hh>
-#include <gazebo/common/Exception.hh>
-#if GAZEBO_GPU_RAY
-#include <gazebo/sensors/GpuRaySensor.hh>
-#else
-#include <gazebo/sensors/RaySensor.hh>
-#endif
-#include <gazebo/sensors/SensorTypes.hh>
-#include <gazebo/transport/Node.hh>
+static_assert(GAZEBO_MAJOR_VERSION >= 11, "Gazebo version is too old");
 
-#include <sensor_msgs/PointCloud2.h>
-
-#include <tf/tf.h>
-
-static_assert(GAZEBO_MAJOR_VERSION > 2, "Gazebo version is too old");
-
-#if GAZEBO_GPU_RAY
-#define RaySensor GpuRaySensor
-#define STR_Gpu  "Gpu"
-#define STR_GPU_ "GPU "
-#else
-#define STR_Gpu  ""
-#define STR_GPU_ ""
-#endif
 
 namespace gazebo
 {
@@ -72,7 +48,7 @@ GZ_REGISTER_SENSOR_PLUGIN(GazeboRosVelodyneLaser)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-GazeboRosVelodyneLaser::GazeboRosVelodyneLaser() : nh_(NULL), gaussian_noise_(0), min_range_(0), max_range_(0)
+GazeboRosVelodyneLaser::GazeboRosVelodyneLaser() : min_range_(0), max_range_(0), gaussian_noise_(0)
 {
 }
 
@@ -80,67 +56,44 @@ GazeboRosVelodyneLaser::GazeboRosVelodyneLaser() : nh_(NULL), gaussian_noise_(0)
 // Destructor
 GazeboRosVelodyneLaser::~GazeboRosVelodyneLaser()
 {
-  ////////////////////////////////////////////////////////////////////////////////
-  // Finalize the controller / Custom Callback Queue
-  laser_queue_.clear();
-  laser_queue_.disable();
-  if (nh_) {
-    nh_->shutdown();
-    delete nh_;
-    nh_ = NULL;
-  }
-  callback_laser_queue_thread_.join();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void GazeboRosVelodyneLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 {
-  // Load plugin
-  RayPlugin::Load(_parent, _sdf);
+  gzdbg << "Loading GazeboRosVelodyneLaser\n";
 
   // Initialize Gazebo node
   gazebo_node_ = gazebo::transport::NodePtr(new gazebo::transport::Node());
   gazebo_node_->Init();
 
+  // Create node handle
+  ros_node_ = gazebo_ros::Node::Get(_sdf);
+
   // Get the parent ray sensor
-#if GAZEBO_MAJOR_VERSION >= 7
-  parent_ray_sensor_ = std::dynamic_pointer_cast<sensors::RaySensor>(_parent);
-#else
-  parent_ray_sensor_ = boost::dynamic_pointer_cast<sensors::RaySensor>(_parent);
-#endif
-  if (!parent_ray_sensor_) {
-    gzthrow("GazeboRosVelodyne" << STR_Gpu << "Laser controller requires a " << STR_Gpu << "Ray Sensor as its parent");
-  }
+  parent_ray_sensor_ = _parent;
 
-  robot_namespace_ = "/";
-  if (_sdf->HasElement("robotNamespace")) {
-    robot_namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
-  }
-
-  if (!_sdf->HasElement("frameName")) {
-    ROS_INFO("Velodyne laser plugin missing <frameName>, defaults to /world");
-    frame_name_ = "/world";
-  } else {
-    frame_name_ = _sdf->GetElement("frameName")->Get<std::string>();
-  }
+  // Sets the frame name to either the supplied name, or the name of the sensor
+  std::string tf_prefix = _sdf->Get<std::string>("tf_prefix", std::string("")).first;
+  frame_name_ = tf_resolve(tf_prefix, gazebo_ros::SensorFrameID(*_parent, *_sdf));
 
   if (!_sdf->HasElement("organize_cloud")) {
-    ROS_INFO("Velodyne laser plugin missing <organize_cloud>, defaults to false");
+    RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin missing <organize_cloud>, defaults to false");
     organize_cloud_ = false;
   } else {
     organize_cloud_ = _sdf->GetElement("organize_cloud")->Get<bool>();
   }
 
   if (!_sdf->HasElement("min_range")) {
-    ROS_INFO("Velodyne laser plugin missing <min_range>, defaults to 0");
+    RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin missing <min_range>, defaults to 0");
     min_range_ = 0;
   } else {
     min_range_ = _sdf->GetElement("min_range")->Get<double>();
   }
 
   if (!_sdf->HasElement("max_range")) {
-    ROS_INFO("Velodyne laser plugin missing <max_range>, defaults to infinity");
+    RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin missing <max_range>, defaults to infinity");
     max_range_ = INFINITY;
   } else {
     max_range_ = _sdf->GetElement("max_range")->Get<double>();
@@ -148,125 +101,64 @@ void GazeboRosVelodyneLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _s
 
   min_intensity_ = std::numeric_limits<double>::lowest();
   if (!_sdf->HasElement("min_intensity")) {
-    ROS_INFO("Velodyne laser plugin missing <min_intensity>, defaults to no clipping");
+    RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin missing <min_intensity>, defaults to no clipping");
   } else {
     min_intensity_ = _sdf->GetElement("min_intensity")->Get<double>();
   }
 
-  if (!_sdf->HasElement("topicName")) {
-    ROS_INFO("Velodyne laser plugin missing <topicName>, defaults to /points");
-    topic_name_ = "/points";
-  } else {
-    topic_name_ = _sdf->GetElement("topicName")->Get<std::string>();
-  }
-
-  if (!_sdf->HasElement("gaussianNoise")) {
-    ROS_INFO("Velodyne laser plugin missing <gaussianNoise>, defaults to 0.0");
+  if (!_sdf->HasElement("gaussian_noise")) {
+    RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin missing <gaussian_noise>, defaults to 0.0");
     gaussian_noise_ = 0;
   } else {
-    gaussian_noise_ = _sdf->GetElement("gaussianNoise")->Get<double>();
+    gaussian_noise_ = _sdf->GetElement("gaussian_noise")->Get<double>();
   }
 
-  // Make sure the ROS node for Gazebo has already been initialized
-  if (!ros::isInitialized()) {
-    ROS_FATAL_STREAM("A ROS node for Gazebo has not been initialized, unable to load plugin. "
-      << "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
-    return;
-  }
+  // Advertise publisher
+  pub_ = ros_node_->create_publisher<sensor_msgs::msg::PointCloud2>("~/out", 10);
 
-  // Create node handle
-  nh_ = new ros::NodeHandle(robot_namespace_);
+  // ROS2 publishers do not support connection callbacks (at least as of foxy)
+  // Use timer to emulate ROS1 style connection callback
+  using namespace std::chrono_literals;
+  timer_ = ros_node_->create_wall_timer(0.5s, std::bind(&GazeboRosVelodyneLaser::ConnectCb, this));
 
-  // Resolve tf prefix
-  std::string prefix;
-  nh_->getParam(std::string("tf_prefix"), prefix);
-  if (robot_namespace_ != "/") {
-    prefix = robot_namespace_;
-  }
-  boost::trim_right_if(prefix, boost::is_any_of("/"));
-  frame_name_ = tf::resolve(prefix, frame_name_);
-
-  // Advertise publisher with a custom callback queue
-  if (topic_name_ != "") {
-    ros::AdvertiseOptions ao = ros::AdvertiseOptions::create<sensor_msgs::PointCloud2>(
-        topic_name_, 1,
-        boost::bind(&GazeboRosVelodyneLaser::ConnectCb, this),
-        boost::bind(&GazeboRosVelodyneLaser::ConnectCb, this),
-        ros::VoidPtr(), &laser_queue_);
-    pub_ = nh_->advertise(ao);
-  }
-
-  // Sensor generation off by default
-  parent_ray_sensor_->SetActive(false);
-
-  // Start custom queue for laser
-  callback_laser_queue_thread_ = boost::thread( boost::bind( &GazeboRosVelodyneLaser::laserQueueThread,this ) );
-
-#if GAZEBO_MAJOR_VERSION >= 7
-  ROS_INFO("Velodyne %slaser plugin ready, %i lasers", STR_GPU_, parent_ray_sensor_->VerticalRangeCount());
-#else
-  ROS_INFO("Velodyne %slaser plugin ready, %i lasers", STR_GPU_, parent_ray_sensor_->GetVerticalRangeCount());
-#endif
+  RCLCPP_INFO(ros_node_->get_logger(), "Velodyne laser plugin ready");
+  gzdbg << "GazeboRosVelodyneLaser LOADED\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Subscribe on-demand
 void GazeboRosVelodyneLaser::ConnectCb()
 {
-  boost::lock_guard<boost::mutex> lock(lock_);
-  if (pub_.getNumSubscribers()) {
+  std::lock_guard<std::mutex> lock(lock_);
+  if (pub_->get_subscription_count()) {
     if (!sub_) {
-#if GAZEBO_MAJOR_VERSION >= 7
       sub_ = gazebo_node_->Subscribe(this->parent_ray_sensor_->Topic(), &GazeboRosVelodyneLaser::OnScan, this);
-#else
-      sub_ = gazebo_node_->Subscribe(this->parent_ray_sensor_->GetTopic(), &GazeboRosVelodyneLaser::OnScan, this);
-#endif
     }
     parent_ray_sensor_->SetActive(true);
   } else {
-#if GAZEBO_MAJOR_VERSION >= 7
     if (sub_) {
       sub_->Unsubscribe();
       sub_.reset();
     }
-#endif
     parent_ray_sensor_->SetActive(false);
   }
 }
 
 void GazeboRosVelodyneLaser::OnScan(ConstLaserScanStampedPtr& _msg)
 {
-#if GAZEBO_MAJOR_VERSION >= 7
-  const ignition::math::Angle maxAngle = parent_ray_sensor_->AngleMax();
-  const ignition::math::Angle minAngle = parent_ray_sensor_->AngleMin();
+  const ignition::math::Angle maxAngle = _msg->scan().angle_max();
+  const ignition::math::Angle minAngle = _msg->scan().angle_min();
 
-  const double maxRange = parent_ray_sensor_->RangeMax();
-  const double minRange = parent_ray_sensor_->RangeMin();
+  const double maxRange = _msg->scan().range_max();
+  const double minRange = _msg->scan().range_min();
 
-  const int rayCount = parent_ray_sensor_->RayCount();
-  const int rangeCount = parent_ray_sensor_->RangeCount();
+  const int rangeCount = _msg->scan().count();
 
-  const int verticalRayCount = parent_ray_sensor_->VerticalRayCount();
-  const int verticalRangeCount = parent_ray_sensor_->VerticalRangeCount();
+  const int verticalRayCount = _msg->scan().vertical_count();
+  const int verticalRangeCount = _msg->scan().vertical_count();
 
-  const ignition::math::Angle verticalMaxAngle = parent_ray_sensor_->VerticalAngleMax();
-  const ignition::math::Angle verticalMinAngle = parent_ray_sensor_->VerticalAngleMin();
-#else
-  math::Angle maxAngle = parent_ray_sensor_->GetAngleMax();
-  math::Angle minAngle = parent_ray_sensor_->GetAngleMin();
-
-  const double maxRange = parent_ray_sensor_->GetRangeMax();
-  const double minRange = parent_ray_sensor_->GetRangeMin();
-
-  const int rayCount = parent_ray_sensor_->GetRayCount();
-  const int rangeCount = parent_ray_sensor_->GetRangeCount();
-
-  const int verticalRayCount = parent_ray_sensor_->GetVerticalRayCount();
-  const int verticalRangeCount = parent_ray_sensor_->GetVerticalRangeCount();
-
-  const math::Angle verticalMaxAngle = parent_ray_sensor_->GetVerticalAngleMax();
-  const math::Angle verticalMinAngle = parent_ray_sensor_->GetVerticalAngleMin();
-#endif
+  const ignition::math::Angle verticalMaxAngle = _msg->scan().vertical_angle_max();
+  const ignition::math::Angle verticalMinAngle = _msg->scan().vertical_angle_min();
 
   const double yDiff = maxAngle.Radian() - minAngle.Radian();
   const double pDiff = verticalMaxAngle.Radian() - verticalMinAngle.Radian();
@@ -277,33 +169,34 @@ void GazeboRosVelodyneLaser::OnScan(ConstLaserScanStampedPtr& _msg)
 
   // Populate message fields
   const uint32_t POINT_STEP = 22;
-  sensor_msgs::PointCloud2 msg;
+  sensor_msgs::msg::PointCloud2 msg;
   msg.header.frame_id = frame_name_;
-  msg.header.stamp = ros::Time(_msg->time().sec(), _msg->time().nsec());
+  msg.header.stamp.sec = _msg->time().sec();
+  msg.header.stamp.nanosec = _msg->time().nsec();
   msg.fields.resize(6);
   msg.fields[0].name = "x";
   msg.fields[0].offset = 0;
-  msg.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[0].datatype = sensor_msgs::msg::PointField::FLOAT32;
   msg.fields[0].count = 1;
   msg.fields[1].name = "y";
   msg.fields[1].offset = 4;
-  msg.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[1].datatype = sensor_msgs::msg::PointField::FLOAT32;
   msg.fields[1].count = 1;
   msg.fields[2].name = "z";
   msg.fields[2].offset = 8;
-  msg.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[2].datatype = sensor_msgs::msg::PointField::FLOAT32;
   msg.fields[2].count = 1;
   msg.fields[3].name = "intensity";
   msg.fields[3].offset = 12;
-  msg.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[3].datatype = sensor_msgs::msg::PointField::FLOAT32;
   msg.fields[3].count = 1;
   msg.fields[4].name = "ring";
   msg.fields[4].offset = 16;
-  msg.fields[4].datatype = sensor_msgs::PointField::UINT16;
+  msg.fields[4].datatype = sensor_msgs::msg::PointField::UINT16;
   msg.fields[4].count = 1;
   msg.fields[5].name = "time";
   msg.fields[5].offset = 18;
-  msg.fields[5].datatype = sensor_msgs::PointField::FLOAT32;
+  msg.fields[5].datatype = sensor_msgs::msg::PointField::FLOAT32;
   msg.fields[5].count = 1;
   msg.data.resize(verticalRangeCount * rangeCount * POINT_STEP);
 
@@ -376,25 +269,14 @@ void GazeboRosVelodyneLaser::OnScan(ConstLaserScanStampedPtr& _msg)
     msg.row_step = POINT_STEP * msg.width;
     msg.is_dense = false;
   } else {
-    msg.width = 1;
-    msg.height = msg.data.size() / POINT_STEP;
+    msg.width = msg.data.size() / POINT_STEP;
+    msg.height = 1;
     msg.row_step = msg.data.size();
     msg.is_dense = true;
   }
 
   // Publish output
-  pub_.publish(msg);
-}
-
-// Custom Callback Queue
-////////////////////////////////////////////////////////////////////////////////
-// Custom callback queue thread
-void GazeboRosVelodyneLaser::laserQueueThread()
-{
-  while (nh_->ok()) {
-    laser_queue_.callAvailable(ros::WallDuration(0.01));
-  }
+  pub_->publish(msg);
 }
 
 } // namespace gazebo
-
