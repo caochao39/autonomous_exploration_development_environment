@@ -2,27 +2,34 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ros/ros.h>
+#include <chrono>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 
-#include <std_msgs/Float32.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PointStamped.h>
-#include <geometry_msgs/PolygonStamped.h>
-#include <sensor_msgs/PointCloud2.h>
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include <std_msgs/msg/float32.hpp>
+#include <geometry_msgs/msg/polygon_stamped.h>
+#include <geometry_msgs/msg/point_stamped.h>
 
-#include <tf/transform_datatypes.h>
-#include <tf/transform_broadcaster.h>
+#include "tf2/transform_datatypes.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <pcl/io/ply_io.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree_flann.h>
+
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "rmw/types.h"
+#include "rmw/qos_profiles.h"
 
 using namespace std;
 
@@ -65,24 +72,34 @@ pcl::VoxelGrid<pcl::PointXYZ> overallMapDwzFilter;
 pcl::VoxelGrid<pcl::PointXYZI> exploredAreaDwzFilter;
 pcl::VoxelGrid<pcl::PointXYZI> exploredVolumeDwzFilter;
 
-sensor_msgs::PointCloud2 overallMap2;
+sensor_msgs::msg::PointCloud2 overallMap2;
 
-ros::Publisher *pubExploredAreaPtr = NULL;
-ros::Publisher *pubTrajectoryPtr = NULL;
-ros::Publisher *pubExploredVolumePtr = NULL;
-ros::Publisher *pubTravelingDisPtr = NULL;
-ros::Publisher *pubTimeDurationPtr = NULL;
+// ros::Publisher *pubExploredAreaPtr = NULL;
+shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubExploredAreaPtr;
+
+// ros::Publisher *pubTrajectoryPtr = NULL;
+shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubTrajectoryPtr;
+
+// ros::Publisher *pubExploredVolumePtr = NULL;
+shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubExploredVolumePtr;
+
+// ros::Publisher *pubTravelingDisPtr = NULL;
+shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubTravelingDisPtr;
+
+// ros::Publisher *pubTimeDurationPtr = NULL;
+shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubTimeDurationPtr;
+
 
 FILE *metricFilePtr = NULL;
 FILE *trajFilePtr = NULL;
 
-void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
+void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
-  systemTime = odom->header.stamp.toSec();
-
+  // systemTime = odom->header.stamp.toSec();
+  systemTime = std::chrono::duration<double>(std::chrono::nanoseconds(odom->header.stamp.nanosec)).count();
   double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = odom->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
+  geometry_msgs::msg::Quaternion geoQuat = odom->pose.pose.orientation;
+  tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
 
   float dYaw = fabs(yaw - vehicleYaw);
   if (dYaw > PI) dYaw = 2 * PI  - dYaw;
@@ -103,7 +120,7 @@ void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
   if (systemInited) {
     timeDuration = systemTime - systemInitTime;
     
-    std_msgs::Float32 timeDurationMsg;
+    std_msgs::msg::Float32 timeDurationMsg;
     timeDurationMsg.data = timeDuration;
     pubTimeDurationPtr->publish(timeDurationMsg);
   }
@@ -134,14 +151,14 @@ void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
   point.intensity = travelingDis;
   trajectory->push_back(point);
 
-  sensor_msgs::PointCloud2 trajectory2;
+  sensor_msgs::msg::PointCloud2 trajectory2;
   pcl::toROSMsg(*trajectory, trajectory2);
   trajectory2.header.stamp = odom->header.stamp;
   trajectory2.header.frame_id = "map";
   pubTrajectoryPtr->publish(trajectory2);
 }
 
-void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
+void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloudIn)
 {
   if (!systemDelayInited) {
     systemDelayCount++;
@@ -182,7 +199,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
     exploredAreaCloud = exploredAreaCloud2;
     exploredAreaCloud2 = tempCloud;
 
-    sensor_msgs::PointCloud2 exploredArea2;
+    sensor_msgs::msg::PointCloud2 exploredArea2;
     pcl::toROSMsg(*exploredAreaCloud, exploredArea2);
     exploredArea2.header.stamp = laserCloudIn->header.stamp;
     exploredArea2.header.frame_id = "map";
@@ -193,59 +210,70 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 
   fprintf(metricFilePtr, "%f %f %f %f\n", exploredVolume, travelingDis, runtime, timeDuration);
 
-  std_msgs::Float32 exploredVolumeMsg;
+  std_msgs::msg::Float32 exploredVolumeMsg;
   exploredVolumeMsg.data = exploredVolume;
   pubExploredVolumePtr->publish(exploredVolumeMsg);
   
-  std_msgs::Float32 travelingDisMsg;
+  std_msgs::msg::Float32 travelingDisMsg;
   travelingDisMsg.data = travelingDis;
   pubTravelingDisPtr->publish(travelingDisMsg);
 }
 
-void runtimeHandler(const std_msgs::Float32::ConstPtr& runtimeIn)
+void runtimeHandler(const std_msgs::msg::Float32::ConstSharedPtr runtimeIn)
 {
   runtime = runtimeIn->data;
 }
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "visualizationTools");
-  ros::NodeHandle nh;
-  ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  // ros::init(argc, argv, "visualizationTools");
+  // ros::NodeHandle nh;
+  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  rclcpp::init(argc, argv);
+  auto nh = rclcpp::Node::make_shared("visualizationTools");
 
-  nhPrivate.getParam("metricFile", metricFile);
-  nhPrivate.getParam("trajFile", trajFile);
-  nhPrivate.getParam("mapFile", mapFile);
-  nhPrivate.getParam("overallMapVoxelSize", overallMapVoxelSize);
-  nhPrivate.getParam("exploredAreaVoxelSize", exploredAreaVoxelSize);
-  nhPrivate.getParam("exploredVolumeVoxelSize", exploredVolumeVoxelSize);
-  nhPrivate.getParam("transInterval", transInterval);
-  nhPrivate.getParam("yawInterval", yawInterval);
-  nhPrivate.getParam("overallMapDisplayInterval", overallMapDisplayInterval);
-  nhPrivate.getParam("exploredAreaDisplayInterval", exploredAreaDisplayInterval);
+  nh->get_parameter("metricFile", metricFile);
+  nh->get_parameter("trajFile", trajFile);
+  nh->get_parameter("mapFile", mapFile);
+  nh->get_parameter("overallMapVoxelSize", overallMapVoxelSize);
+  nh->get_parameter("exploredAreaVoxelSize", exploredAreaVoxelSize);
+  nh->get_parameter("exploredVolumeVoxelSize", exploredVolumeVoxelSize);
+  nh->get_parameter("transInterval", transInterval);
+  nh->get_parameter("yawInterval", yawInterval);
+  nh->get_parameter("overallMapDisplayInterval", overallMapDisplayInterval);
+  nh->get_parameter("exploredAreaDisplayInterval", exploredAreaDisplayInterval);
 
-  ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, odometryHandler);
+  // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, odometryHandler);
+  auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2> ("/registered_scan", 5, laserCloudHandler);
+  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2> ("/registered_scan", 5, laserCloudHandler);
+  auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  ros::Subscriber subRuntime = nh.subscribe<std_msgs::Float32> ("/runtime", 5, runtimeHandler);
+  // ros::Subscriber subRuntime = nh.subscribe<std_msgs::Float32> ("/runtime", 5, runtimeHandler);
+  auto subRuntime = nh->create_subscription<std_msgs::msg::Float32>("/runtime", 5, runtimeHandler);
 
-  ros::Publisher pubOverallMap = nh.advertise<sensor_msgs::PointCloud2> ("/overall_map", 5);
+  // ros::Publisher pubOverallMap = nh.advertise<sensor_msgs::PointCloud2> ("/overall_map", 5);
+  auto pubOverallMap = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/overall_map", 5);
 
-  ros::Publisher pubExploredArea = nh.advertise<sensor_msgs::PointCloud2> ("/explored_areas", 5);
-  pubExploredAreaPtr = &pubExploredArea;
+  // ros::Publisher pubExploredArea = nh.advertise<sensor_msgs::PointCloud2> ("/explored_areas", 5);
+  // pubExploredAreaPtr = &pubExploredArea;
+  pubExploredAreaPtr = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/explored_areas", 5);
 
-  ros::Publisher pubTrajectory = nh.advertise<sensor_msgs::PointCloud2> ("/trajectory", 5);
-  pubTrajectoryPtr = &pubTrajectory;
+  // ros::Publisher pubTrajectory = nh.advertise<sensor_msgs::PointCloud2> ("/trajectory", 5);
+  // pubTrajectoryPtr = &pubTrajectory;
+  pubTrajectoryPtr = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/trajectory", 5);
+  
+  // ros::Publisher pubExploredVolume = nh.advertise<std_msgs::Float32> ("/explored_volume", 5);
+  // pubExploredVolumePtr = &pubExploredVolume;
+  pubExploredVolumePtr = nh->create_publisher<std_msgs::msg::Float32>("/explored_volume", 5);
 
-  ros::Publisher pubExploredVolume = nh.advertise<std_msgs::Float32> ("/explored_volume", 5);
-  pubExploredVolumePtr = &pubExploredVolume;
+  // ros::Publisher pubTravelingDis = nh.advertise<std_msgs::Float32> ("/traveling_distance", 5);
+  // pubTravelingDisPtr = &pubTravelingDis;
+  pubTravelingDisPtr = nh->create_publisher<std_msgs::msg::Float32>("/traveling_distance", 5);
 
-  ros::Publisher pubTravelingDis = nh.advertise<std_msgs::Float32> ("/traveling_distance", 5);
-  pubTravelingDisPtr = &pubTravelingDis;
-
-  ros::Publisher pubTimeDuration = nh.advertise<std_msgs::Float32> ("/time_duration", 5);
-  pubTimeDurationPtr = &pubTimeDuration;
+  // ros::Publisher pubTimeDuration = nh.advertise<std_msgs::Float32> ("/time_duration", 5);
+  // pubTimeDurationPtr = &pubTimeDuration;
+  pubTimeDurationPtr = nh->create_publisher<std_msgs::msg::Float32>("/time_duration", 5);
 
   //ros::Publisher pubRuntime = nh.advertise<std_msgs::Float32> ("/runtime", 5);
 
@@ -275,21 +303,25 @@ int main(int argc, char** argv)
   metricFilePtr = fopen(metricFile.c_str(), "w");
   trajFilePtr = fopen(trajFile.c_str(), "w");
 
-  ros::Rate rate(100);
-  bool status = ros::ok();
+  // ros::Rate rate(100);
+  // bool status = ros::ok();
+  rclcpp::Rate rate(100);
+  bool status = rclcpp::ok();
   while (status) {
-    ros::spinOnce();
-
+    // ros::spinOnce();
+    rclcpp::spin_some(nh);
     overallMapDisplayCount++;
     if (overallMapDisplayCount >= 100 * overallMapDisplayInterval) {
-      overallMap2.header.stamp = ros::Time().fromSec(systemTime);
+      // overallMap2.header.stamp = ros::Time().fromSec(systemTime);
+      overallMap2.header.stamp = rclcpp::Time(static_cast<uint64_t>(systemTime * 1e9));
       overallMap2.header.frame_id = "map";
-      pubOverallMap.publish(overallMap2);
+      pubOverallMap->publish(overallMap2);
 
       overallMapDisplayCount = 0;
     }
 
-    status = ros::ok();
+    // status = ros::ok();
+    status = rclcpp::ok();
     rate.sleep();
   }
 
