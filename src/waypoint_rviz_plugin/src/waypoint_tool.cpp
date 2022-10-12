@@ -22,8 +22,7 @@ void WaypointTool::onInitialize()
 void WaypointTool::updateTopic()
 {
   // sub_ = nh_.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, &WaypointTool::odomHandler, this);
-  // sub_ = nh_->create_subscription<nav_msgs::msg::Odometry> ("/state_estimation", 5, &rviz_default_plugins::tools::WaypointTool::odomHandler, nh_);
-  // sub_ = nh_->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5 ,std::bind(&WaypointTool::odomHandler,nh_,std::placeholders::_1));
+  sub_ = nh_->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5 ,std::bind(&WaypointTool::odomHandler,this,std::placeholders::_1));
   // pub_ = nh_.advertise<geometry_msgs::PointStamped>("/way_point", 5);
   pub_ = nh_->create_publisher<geometry_msgs::msg::PointStamped>("/way_point", 5);
   // pub_joy_ = nh_.advertise<sensor_msgs::Joy>("/joy", 5);
