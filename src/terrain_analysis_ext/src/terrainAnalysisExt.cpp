@@ -1,28 +1,35 @@
 #include <math.h>
-#include <ros/ros.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <chrono>
 #include <queue>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/synchronizer.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/Joy.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/Float32MultiArray.h>
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include <sensor_msgs/msg/joy.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
 
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_datatypes.h>
+#include "tf2/transform_datatypes.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
+
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "rmw/types.h"
+#include "rmw/qos_profiles.h"
 
 using namespace std;
 
@@ -89,11 +96,11 @@ pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
 pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;
 
 // state estimation callback function
-void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
+void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
   double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = odom->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
+  geometry_msgs::msg::Quaternion geoQuat = odom->pose.pose.orientation;
+  tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
 
   vehicleRoll = roll;
   vehiclePitch = pitch;
@@ -104,9 +111,10 @@ void odometryHandler(const nav_msgs::Odometry::ConstPtr& odom)
 }
 
 // registered laser scan callback function
-void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloud2)
+void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2)
 {
-  laserCloudTime = laserCloud2->header.stamp.toSec();
+  // laserCloudTime = laserCloud2->header.stamp.toSec();
+  laserCloudTime = std::chrono::duration<double>(std::chrono::nanoseconds(laserCloud2->header.stamp.nanosec)).count();
 
   if (!systemInited)
   {
@@ -144,14 +152,14 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloud2)
 }
 
 // local terrain cloud callback function
-void terrainCloudLocalHandler(const sensor_msgs::PointCloud2ConstPtr& terrainCloudLocal2)
+void terrainCloudLocalHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr terrainCloudLocal2)
 {
   terrainCloudLocal->clear();
   pcl::fromROSMsg(*terrainCloudLocal2, *terrainCloudLocal);
 }
 
 // joystick callback function
-void joystickHandler(const sensor_msgs::Joy::ConstPtr& joy)
+void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 {
   if (joy->buttons[5] > 0.5)
   {
@@ -160,7 +168,7 @@ void joystickHandler(const sensor_msgs::Joy::ConstPtr& joy)
 }
 
 // cloud clearing callback function
-void clearingHandler(const std_msgs::Float32::ConstPtr& dis)
+void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis)
 {
   clearingDis = dis->data;
   clearingCloud = true;
@@ -168,39 +176,46 @@ void clearingHandler(const std_msgs::Float32::ConstPtr& dis)
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "terrainAnalysisExt");
-  ros::NodeHandle nh;
-  ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  // ros::init(argc, argv, "terrainAnalysisExt");
+  // ros::NodeHandle nh;
+  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
+  rclcpp::init(argc, argv);
+  auto nh = rclcpp::Node::make_shared("terrainAnalysisExt");
+  nh->get_parameter("scanVoxelSize", scanVoxelSize);
+  nh->get_parameter("decayTime", decayTime);
+  nh->get_parameter("noDecayDis", noDecayDis);
+  nh->get_parameter("clearingDis", clearingDis);
+  nh->get_parameter("useSorting", useSorting);
+  nh->get_parameter("quantileZ", quantileZ);
+  nh->get_parameter("vehicleHeight", vehicleHeight);
+  nh->get_parameter("voxelPointUpdateThre", voxelPointUpdateThre);
+  nh->get_parameter("voxelTimeUpdateThre", voxelTimeUpdateThre);
+  nh->get_parameter("lowerBoundZ", lowerBoundZ);
+  nh->get_parameter("upperBoundZ", upperBoundZ);
+  nh->get_parameter("disRatioZ", disRatioZ);
+  nh->get_parameter("checkTerrainConn", checkTerrainConn);
+  nh->get_parameter("terrainUnderVehicle", terrainUnderVehicle);
+  nh->get_parameter("terrainConnThre", terrainConnThre);
+  nh->get_parameter("ceilingFilteringThre", ceilingFilteringThre);
+  nh->get_parameter("localTerrainMapRadius", localTerrainMapRadius);
 
-  nhPrivate.getParam("scanVoxelSize", scanVoxelSize);
-  nhPrivate.getParam("decayTime", decayTime);
-  nhPrivate.getParam("noDecayDis", noDecayDis);
-  nhPrivate.getParam("clearingDis", clearingDis);
-  nhPrivate.getParam("useSorting", useSorting);
-  nhPrivate.getParam("quantileZ", quantileZ);
-  nhPrivate.getParam("vehicleHeight", vehicleHeight);
-  nhPrivate.getParam("voxelPointUpdateThre", voxelPointUpdateThre);
-  nhPrivate.getParam("voxelTimeUpdateThre", voxelTimeUpdateThre);
-  nhPrivate.getParam("lowerBoundZ", lowerBoundZ);
-  nhPrivate.getParam("upperBoundZ", upperBoundZ);
-  nhPrivate.getParam("disRatioZ", disRatioZ);
-  nhPrivate.getParam("checkTerrainConn", checkTerrainConn);
-  nhPrivate.getParam("terrainUnderVehicle", terrainUnderVehicle);
-  nhPrivate.getParam("terrainConnThre", terrainConnThre);
-  nhPrivate.getParam("ceilingFilteringThre", ceilingFilteringThre);
-  nhPrivate.getParam("localTerrainMapRadius", localTerrainMapRadius);
+  // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>("/state_estimation", 5, odometryHandler);
+  auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>("/state_estimation", 5, odometryHandler);
+  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/registered_scan", 5, laserCloudHandler);
+  auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/registered_scan", 5, laserCloudHandler);
+  // ros::Subscriber subJoystick = nh.subscribe<sensor_msgs::Joy>("/joy", 5, joystickHandler);
+  auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
 
-  ros::Subscriber subJoystick = nh.subscribe<sensor_msgs::Joy>("/joy", 5, joystickHandler);
+  // ros::Subscriber subClearing = nh.subscribe<std_msgs::Float32>("/cloud_clearing", 5, clearingHandler);
+  auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/cloud_clearing", 5, clearingHandler);
 
-  ros::Subscriber subClearing = nh.subscribe<std_msgs::Float32>("/cloud_clearing", 5, clearingHandler);
+  // ros::Subscriber subTerrainCloudLocal = nh.subscribe<sensor_msgs::PointCloud2>("/terrain_map", 2, terrainCloudLocalHandler);
+  auto subTerrainCloudLocal = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/terrain_map", 2, terrainCloudLocalHandler);
 
-  ros::Subscriber subTerrainCloudLocal = nh.subscribe<sensor_msgs::PointCloud2>("/terrain_map", 2, terrainCloudLocalHandler);
-
-  ros::Publisher pubTerrainCloud = nh.advertise<sensor_msgs::PointCloud2>("/terrain_map_ext", 2);
+  // ros::Publisher pubTerrainCloud = nh.advertise<sensor_msgs::PointCloud2>("/terrain_map_ext", 2);
+  auto pubTerrainCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map_ext", 2);
 
   for (int i = 0; i < terrainVoxelNum; i++)
   {
@@ -212,11 +227,14 @@ int main(int argc, char** argv)
   std::vector<int> pointIdxNKNSearch;
   std::vector<float> pointNKNSquaredDistance;
 
-  ros::Rate rate(100);
-  bool status = ros::ok();
+  // ros::Rate rate(100);
+  rclcpp::Rate rate(100);
+  // bool status = ros::ok();
+  bool status = rclcpp::ok();
   while (status)
   {
-    ros::spinOnce();
+    // ros::spinOnce();
+    rclcpp::spin_some(nh);
 
     if (newlaserCloud)
     {
@@ -529,16 +547,18 @@ int main(int argc, char** argv)
       clearingCloud = false;
 
       // publish points with elevation
-      sensor_msgs::PointCloud2 terrainCloud2;
+      sensor_msgs::msg::PointCloud2 terrainCloud2;
       pcl::toROSMsg(*terrainCloudElev, terrainCloud2);
-      terrainCloud2.header.stamp = ros::Time().fromSec(laserCloudTime);
+      // terrainCloud2.header.stamp = ros::Time().fromSec(laserCloudTime);
+      terrainCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
       terrainCloud2.header.frame_id = "map";
-      pubTerrainCloud.publish(terrainCloud2);
+      pubTerrainCloud->publish(terrainCloud2);
     }
 
-    status = ros::ok();
+    // status = ros::ok();
+    status = rclcpp::ok();
     rate.sleep();
   }
-
+  
   return 0;
 }
