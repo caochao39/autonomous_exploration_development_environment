@@ -161,6 +161,16 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("waypointExample");
 
+  nh->declare_parameter<std::string>("waypoint_file_dir", waypoint_file_dir);
+  nh->declare_parameter<std::string>("boundary_file_dir", boundary_file_dir);
+  nh->declare_parameter<double>("waypointXYRadius", waypointXYRadius);
+  nh->declare_parameter<double>("waypointZBound", waypointZBound);
+  nh->declare_parameter<double>("waitTime", waitTime);
+  nh->declare_parameter<double>("frameRate", frameRate);
+  nh->declare_parameter<double>("speed", speed);
+  nh->declare_parameter<bool>("sendSpeed", sendSpeed);
+  nh->declare_parameter<bool>("sendBoundary", sendBoundary);
+
   nh->get_parameter("waypoint_file_dir", waypoint_file_dir);
   nh->get_parameter("boundary_file_dir", boundary_file_dir);
   nh->get_parameter("waypointXYRadius", waypointXYRadius);
@@ -170,7 +180,6 @@ int main(int argc, char** argv)
   nh->get_parameter("speed", speed);
   nh->get_parameter("sendSpeed", sendSpeed);
   nh->get_parameter("sendBoundary", sendBoundary);
-
   auto subPose = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, poseHandler);
   auto pubWaypoint = nh->create_publisher<geometry_msgs::msg::PointStamped>("/way_point", 5);
 
