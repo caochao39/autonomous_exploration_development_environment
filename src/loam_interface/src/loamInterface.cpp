@@ -67,8 +67,6 @@ public:
     this->get_parameter("sendTF", sendTF);
     this->get_parameter("reverseTF", reverseTF);
 
-    std::cout << "Params are : " << stateEstimationTopic << " , " << registeredScanTopic << " , " << flipStateEstimation << " , " << flipRegisteredScan << " , "  << sendTF << " , " << reverseTF << std::endl; 
-
     tfBroadcasterPointer = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     pubLaserCloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("/registered_scan", 5);
     pubOdometry = this->create_publisher<nav_msgs::msg::Odometry>("/state_estimation", 5);
