@@ -48,8 +48,8 @@ unique_ptr<tf2_ros::TransformBroadcaster> tfBroadcasterPointer;
 // ros::Publisher pubLaserCloud;
 shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubLaserCloud;
 
-void laserCloudAndOdometryHandler(const nav_msgs::msg::Odometry::ConstPtr odometry,
-                                  const sensor_msgs::msg::PointCloud2::ConstPtr laserCloud2)
+void laserCloudAndOdometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odometry,
+                                  const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2)
 {
   laserCloudIn->clear();
   laserCLoudInSensorFrame->clear();
@@ -115,9 +115,20 @@ int main(int argc, char** argv)
   typedef message_filters::sync_policies::ApproximateTime<nav_msgs::msg::Odometry, sensor_msgs::msg::PointCloud2> syncPolicy;
   typedef message_filters::Synchronizer<syncPolicy> Sync;
   boost::shared_ptr<Sync> sync_;
-  rmw_qos_profile_t qos_profile;
-  qos_profile.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-  qos_profile.depth = 1;
+  // Define qos_profile as the pre-defined rmw_qos_profile_sensor_data, but with depth equal to 1.
+  rmw_qos_profile_t qos_profile=
+  {
+    RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+    1,
+    RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+    RMW_QOS_POLICY_DURABILITY_VOLATILE,
+    RMW_QOS_DEADLINE_DEFAULT,
+    RMW_QOS_LIFESPAN_DEFAULT,
+    RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+    RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+    false
+  };
+
   subOdometry.subscribe(nh, "/state_estimation", qos_profile);
   subLaserCloud.subscribe(nh, "/registered_scan", qos_profile);
   sync_.reset(new Sync(syncPolicy(100), subOdometry, subLaserCloud));
