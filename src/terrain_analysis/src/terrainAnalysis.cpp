@@ -205,6 +205,32 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
 
+  nh->declare_parameter<double>("scanVoxelSize", scanVoxelSize);
+  nh->declare_parameter<double>("decayTime", decayTime);
+  nh->declare_parameter<double>("noDecayDis", noDecayDis);
+  nh->declare_parameter<double>("clearingDis", clearingDis);
+  nh->declare_parameter<bool>("useSorting", useSorting);
+  nh->declare_parameter<double>("quantileZ", quantileZ);
+  nh->declare_parameter<bool>("considerDrop", considerDrop);
+  nh->declare_parameter<bool>("limitGroundLift", limitGroundLift);
+  nh->declare_parameter<double>("maxGroundLift", maxGroundLift);
+  nh->declare_parameter<bool>("clearDyObs", clearDyObs);
+  nh->declare_parameter<double>("minDyObsDis", minDyObsDis);
+  nh->declare_parameter<double>("minDyObsAngle", minDyObsAngle);
+  nh->declare_parameter<double>("minDyObsRelZ", minDyObsRelZ);
+  nh->declare_parameter<double>("minDyObsVFOV", minDyObsVFOV);
+  nh->declare_parameter<double>("maxDyObsVFOV", maxDyObsVFOV);
+  nh->declare_parameter<int>("minDyObsPointNum", minDyObsPointNum);
+  nh->declare_parameter<bool>("noDataObstacle", noDataObstacle);
+  nh->declare_parameter<int>("noDataBlockSkipNum", noDataBlockSkipNum);
+  nh->declare_parameter<int>("minBlockPointNum", minBlockPointNum);
+  nh->declare_parameter<double>("vehicleHeight", vehicleHeight);
+  nh->declare_parameter<int>("voxelPointUpdateThre", voxelPointUpdateThre);
+  nh->declare_parameter<double>("voxelTimeUpdateThre", voxelTimeUpdateThre);
+  nh->declare_parameter<double>("minRelZ", minRelZ);
+  nh->declare_parameter<double>("maxRelZ", maxRelZ);
+  nh->declare_parameter<double>("disRatioZ", disRatioZ);
+
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
   nh->get_parameter("noDecayDis", noDecayDis);
