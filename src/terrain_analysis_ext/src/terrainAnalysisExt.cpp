@@ -181,6 +181,25 @@ int main(int argc, char** argv)
   // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysisExt");
+
+  nh->declare_parameter<double>("scanVoxelSize", scanVoxelSize);
+  nh->declare_parameter<double>("decayTime", decayTime);
+  nh->declare_parameter<double>("noDecayDis", noDecayDis);
+  nh->declare_parameter<double>("clearingDis", clearingDis);
+  nh->declare_parameter<bool>("useSorting", useSorting);
+  nh->declare_parameter<double>("quantileZ", quantileZ);
+  nh->declare_parameter<double>("vehicleHeight", vehicleHeight);
+  nh->declare_parameter<int>("voxelPointUpdateThre", voxelPointUpdateThre);
+  nh->declare_parameter<double>("voxelTimeUpdateThre", voxelTimeUpdateThre);
+  nh->declare_parameter<double>("lowerBoundZ", lowerBoundZ);
+  nh->declare_parameter<double>("upperBoundZ", upperBoundZ);
+  nh->declare_parameter<double>("disRatioZ", disRatioZ);
+  nh->declare_parameter<bool>("checkTerrainConn", checkTerrainConn);
+  nh->declare_parameter<double>("terrainUnderVehicle", terrainUnderVehicle);
+  nh->declare_parameter<double>("terrainConnThre", terrainConnThre);
+  nh->declare_parameter<double>("ceilingFilteringThre", ceilingFilteringThre);
+  nh->declare_parameter<double>("localTerrainMapRadius", localTerrainMapRadius);
+
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
   nh->get_parameter("noDecayDis", noDecayDis);
