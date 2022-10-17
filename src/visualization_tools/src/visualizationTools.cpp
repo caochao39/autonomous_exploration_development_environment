@@ -232,6 +232,17 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("visualizationTools");
 
+  nh->declare_parameter<std::string>("metricFile", metricFile);
+  nh->declare_parameter<std::string>("trajFile", trajFile);
+  nh->declare_parameter<std::string>("mapFile", mapFile);
+  nh->declare_parameter<double>("overallMapVoxelSize", overallMapVoxelSize);
+  nh->declare_parameter<double>("exploredAreaVoxelSize", exploredAreaVoxelSize);
+  nh->declare_parameter<double>("exploredVolumeVoxelSize", exploredVolumeVoxelSize);
+  nh->declare_parameter<double>("transInterval", transInterval);
+  nh->declare_parameter<double>("yawInterval", yawInterval);
+  nh->declare_parameter<int>("overallMapDisplayInterval", overallMapDisplayInterval);
+  nh->declare_parameter<int>("exploredAreaDisplayInterval", exploredAreaDisplayInterval);
+
   nh->get_parameter("metricFile", metricFile);
   nh->get_parameter("trajFile", trajFile);
   nh->get_parameter("mapFile", mapFile);
@@ -243,6 +254,10 @@ int main(int argc, char** argv)
   nh->get_parameter("overallMapDisplayInterval", overallMapDisplayInterval);
   nh->get_parameter("exploredAreaDisplayInterval", exploredAreaDisplayInterval);
 
+  // No direct replacement present for $(find pkg) in ROS2. Edit file path.
+  metricFile.replace(metricFile.find("/install/"),8,"/src");
+  trajFile.replace(trajFile.find("/install/"),8,"/src");
+  mapFile.replace(mapFile.find("/install/"),8,"/src");
   // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, odometryHandler);
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
