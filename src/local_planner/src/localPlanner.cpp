@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
-
+#include <iostream>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/clock.hpp"
@@ -509,6 +509,46 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   nh = rclcpp::Node::make_shared("localPlanner");
 
+  nh->declare_parameter<std::string>("pathFolder", pathFolder);
+  nh->declare_parameter<double>("vehicleLength", vehicleLength);
+  nh->declare_parameter<double>("vehicleWidth", vehicleWidth);
+  nh->declare_parameter<double>("sensorOffsetX", sensorOffsetX);
+  nh->declare_parameter<double>("sensorOffsetY", sensorOffsetY);
+  nh->declare_parameter<bool>("twoWayDrive", twoWayDrive);
+  nh->declare_parameter<double>("laserVoxelSize", laserVoxelSize);
+  nh->declare_parameter<double>("terrainVoxelSize", terrainVoxelSize);
+  nh->declare_parameter<bool>("useTerrainAnalysis", useTerrainAnalysis);
+  nh->declare_parameter<bool>("checkObstacle", checkObstacle);
+  nh->declare_parameter<bool>("checkRotObstacle", checkRotObstacle);
+  nh->declare_parameter<double>("adjacentRange", adjacentRange);
+  nh->declare_parameter<double>("obstacleHeightThre", obstacleHeightThre);
+  nh->declare_parameter<double>("groundHeightThre", groundHeightThre);
+  nh->declare_parameter<double>("costHeightThre", costHeightThre);
+  nh->declare_parameter<double>("costScore", costScore);
+  nh->declare_parameter<bool>("useCost", useCost);
+  nh->declare_parameter<int>("pointPerPathThre", pointPerPathThre);
+  nh->declare_parameter<double>("minRelZ", minRelZ);
+  nh->declare_parameter<double>("maxRelZ", maxRelZ);
+  nh->declare_parameter<double>("maxSpeed", maxSpeed);
+  nh->declare_parameter<double>("dirWeight", dirWeight);
+  nh->declare_parameter<double>("dirThre", dirThre);
+  nh->declare_parameter<bool>("dirToVehicle", dirToVehicle);
+  nh->declare_parameter<double>("pathScale", pathScale);
+  nh->declare_parameter<double>("minPathScale", minPathScale);
+  nh->declare_parameter<double>("pathScaleStep", pathScaleStep);
+  nh->declare_parameter<bool>("pathScaleBySpeed", pathScaleBySpeed);
+  nh->declare_parameter<double>("minPathRange", minPathRange);
+  nh->declare_parameter<double>("pathRangeStep", pathRangeStep);
+  nh->declare_parameter<bool>("pathRangeBySpeed", pathRangeBySpeed);
+  nh->declare_parameter<bool>("pathCropByGoal", pathCropByGoal);
+  nh->declare_parameter<bool>("autonomyMode", autonomyMode);
+  nh->declare_parameter<double>("autonomySpeed", autonomySpeed);
+  nh->declare_parameter<double>("joyToSpeedDelay", joyToSpeedDelay);
+  nh->declare_parameter<double>("joyToCheckObstacleDelay", joyToCheckObstacleDelay);
+  nh->declare_parameter<double>("goalClearRange", goalClearRange);
+  nh->declare_parameter<double>("goalX", goalX);
+  nh->declare_parameter<double>("goalY", goalY);
+
   nh->get_parameter("pathFolder", pathFolder);
   nh->get_parameter("vehicleLength", vehicleLength);
   nh->get_parameter("vehicleWidth", vehicleWidth);
@@ -549,6 +589,8 @@ int main(int argc, char** argv)
   nh->get_parameter("goalX", goalX);
   nh->get_parameter("goalY", goalY);
 
+  // No direct replacement for $(find pkg) in ROS2.
+  pathFolder.replace(pathFolder.find("/install/"),8,"/src");
   // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>
   //                               ("/state_estimation", 5, odometryHandler);
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);

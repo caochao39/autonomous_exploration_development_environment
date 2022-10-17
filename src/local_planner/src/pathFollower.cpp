@@ -197,6 +197,35 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   nh = rclcpp::Node::make_shared("pathFollower");
 
+  nh->declare_parameter<double>("sensorOffsetX", sensorOffsetX);
+  nh->declare_parameter<double>("sensorOffsetY", sensorOffsetY);
+  nh->declare_parameter<int>("pubSkipNum", pubSkipNum);
+  nh->declare_parameter<bool>("twoWayDrive", twoWayDrive);
+  nh->declare_parameter<double>("lookAheadDis", lookAheadDis);
+  nh->declare_parameter<double>("yawRateGain", yawRateGain);
+  nh->declare_parameter<double>("stopYawRateGain", stopYawRateGain);
+  nh->declare_parameter<double>("maxYawRate", maxYawRate);
+  nh->declare_parameter<double>("maxSpeed", maxSpeed);
+  nh->declare_parameter<double>("maxAccel", maxAccel);
+  nh->declare_parameter<double>("switchTimeThre", switchTimeThre);
+  nh->declare_parameter<double>("dirDiffThre", dirDiffThre);
+  nh->declare_parameter<double>("stopDisThre", stopDisThre);
+  nh->declare_parameter<double>("slowDwnDisThre", slowDwnDisThre);
+  nh->declare_parameter<bool>("useInclRateToSlow", useInclRateToSlow);
+  nh->declare_parameter<double>("inclRateThre", inclRateThre);
+  nh->declare_parameter<double>("slowRate1", slowRate1);
+  nh->declare_parameter<double>("slowRate2", slowRate2);
+  nh->declare_parameter<double>("slowTime1", slowTime1);
+  nh->declare_parameter<double>("slowTime2", slowTime2);
+  nh->declare_parameter<bool>("useInclToStop", useInclToStop);
+  nh->declare_parameter<double>("inclThre", inclThre);
+  nh->declare_parameter<double>("stopTime", stopTime);
+  nh->declare_parameter<bool>("noRotAtStop", noRotAtStop);
+  nh->declare_parameter<bool>("noRotAtGoal", noRotAtGoal);
+  nh->declare_parameter<bool>("autonomyMode", autonomyMode);
+  nh->declare_parameter<double>("autonomySpeed", autonomySpeed);
+  nh->declare_parameter<double>("joyToSpeedDelay", joyToSpeedDelay);
+
   nh->get_parameter("sensorOffsetX", sensorOffsetX);
   nh->get_parameter("sensorOffsetY", sensorOffsetY);
   nh->get_parameter("pubSkipNum", pubSkipNum);
