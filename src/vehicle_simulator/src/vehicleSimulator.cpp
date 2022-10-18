@@ -326,6 +326,27 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("vehicleSimulator");
 
+  nh->declare_parameter<bool>("use_gazebo_time", use_gazebo_time);
+  nh->declare_parameter<double>("cameraOffsetZ", cameraOffsetZ);
+  nh->declare_parameter<double>("sensorOffsetX", sensorOffsetX);
+  nh->declare_parameter<double>("sensorOffsetY", sensorOffsetY);
+  nh->declare_parameter<double>("vehicleHeight", vehicleHeight);
+  nh->declare_parameter<double>("vehicleX", vehicleX);
+  nh->declare_parameter<double>("vehicleY", vehicleY);
+  nh->declare_parameter<double>("vehicleZ", vehicleZ);
+  nh->declare_parameter<double>("terrainZ", terrainZ);
+  nh->declare_parameter<double>("vehicleYaw", vehicleYaw);
+  nh->declare_parameter<double>("terrainVoxelSize", terrainVoxelSize);
+  nh->declare_parameter<double>("groundHeightThre", groundHeightThre);
+  nh->declare_parameter<bool>("adjustZ", adjustZ);
+  nh->declare_parameter<double>("terrainRadiusZ", terrainRadiusZ);
+  nh->declare_parameter<int>("minTerrainPointNumZ", minTerrainPointNumZ);
+  nh->declare_parameter<bool>("adjustIncl", adjustIncl);
+  nh->declare_parameter<double>("terrainRadiusIncl", terrainRadiusIncl);
+  nh->declare_parameter<int>("minTerrainPointNumIncl", minTerrainPointNumIncl);
+  nh->declare_parameter<double>("InclFittingThre", InclFittingThre);
+  nh->declare_parameter<double>("maxIncl", maxIncl);
+
   nh->get_parameter("use_gazebo_time", use_gazebo_time);
   nh->get_parameter("cameraOffsetZ", cameraOffsetZ);
   nh->get_parameter("sensorOffsetX", sensorOffsetX);
@@ -389,7 +410,8 @@ int main(int argc, char** argv)
   terrainDwzFilter.setLeafSize(terrainVoxelSize, terrainVoxelSize, terrainVoxelSize);
 
   printf("\nSimulation started.\n\n");
-
+  bool initTime = false;
+  rclcpp::Time odomTimeRec;
   // ros::Rate rate(200);
   // bool status = ros::ok();
   rclcpp::Rate rate(200);
@@ -417,12 +439,16 @@ int main(int argc, char** argv)
     vehicleZ = terrainZ + vehicleHeight;
 
     // ros::Time odomTimeRec = odomTime;
-    rclcpp::Time odomTimeRec = odomTime;
-
+    if (initTime) odomTimeRec = odomTime;
+    else 
+    {
+      odomTimeRec = rclcpp::Time(0,0,RCL_ROS_TIME);
+      initTime = true;
+    }
     // odomTime = ros::Time::now();
     odomTime = nh->now();
     // if (odomTime == odomTimeRec) odomTime += ros::Duration(0.005);
-    if (odomTime == odomTimeRec) odomTime += rclcpp::Duration::from_seconds(1.0);
+    if (odomTime == odomTimeRec) odomTime += rclcpp::Duration::from_seconds(0.005);
     odomSendIDPointer = (odomSendIDPointer + 1) % stackNum;
     // odomTimeStack[odomSendIDPointer] = odomTime.toSec();
     odomTimeStack[odomSendIDPointer] = odomTime.seconds();
