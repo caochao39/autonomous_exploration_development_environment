@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
-
+#include <iostream>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/clock.hpp"
@@ -22,6 +22,7 @@
 
 #include <gazebo_msgs/msg/model_state.hpp>
 #include <gazebo_msgs/msg/entity_state.hpp>
+#include <gazebo_msgs/srv/set_entity_state.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 #include "tf2/transform_datatypes.h"
@@ -380,6 +381,12 @@ int main(int argc, char** argv)
   // ros::Publisher pubVehicleOdom = nh.advertise<nav_msgs::Odometry>("/state_estimation", 5);
   auto pubVehicleOdom = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation", 5);
 
+  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client =
+    nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
+
+  auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
+  // auto response = std::make_shared<gazebo_msgs::srv::SetEntityState::Response>();
+
   nav_msgs::msg::Odometry odomData;
   odomData.header.frame_id = "map";
   odomData.child_frame_id = "sensor";
@@ -393,7 +400,7 @@ int main(int argc, char** argv)
   // odomTrans.child_frame_id_ = "sensor";
 
   // ros::Publisher pubModelState = nh.advertise<gazebo_msgs::ModelState>("/gazebo/set_model_state", 5);
-  auto pubModelState = nh->create_publisher<gazebo_msgs::msg::EntityState>("/gazebo/set_model_state", 5);
+  // auto pubModelState = nh->create_publisher<gazebo_msgs::msg::EntityState>("/gazebo/set_model_state", 5);
   gazebo_msgs::msg::EntityState cameraState;
   cameraState.name = "camera";
   gazebo_msgs::msg::EntityState lidarState;
@@ -493,13 +500,18 @@ int main(int argc, char** argv)
     cameraState.pose.position.x = vehicleX;
     cameraState.pose.position.y = vehicleY;
     cameraState.pose.position.z = vehicleZ + cameraOffsetZ;
-    pubModelState->publish(cameraState);
+    // pubModelState->publish(cameraState);
+    request->state = cameraState;
+    auto response = client->async_send_request(request);
 
     robotState.pose.orientation = geoQuat;
     robotState.pose.position.x = vehicleX;
     robotState.pose.position.y = vehicleY;
     robotState.pose.position.z = vehicleZ;
-    pubModelState->publish(robotState);
+    // pubModelState->publish(robotState);
+    request->state = robotState;
+    response = client->async_send_request(request);
+    // if(!result) std::cout << "Service failed." << std::endl;
 
     // geoQuat = tf2::createQuaternionMsgFromRollPitchYaw(terrainRoll, terrainPitch, 0);
     quat_tf.setRPY(terrainRoll, terrainPitch, 0);
@@ -508,7 +520,9 @@ int main(int argc, char** argv)
     lidarState.pose.position.x = vehicleX;
     lidarState.pose.position.y = vehicleY;
     lidarState.pose.position.z = vehicleZ;
-    pubModelState->publish(lidarState);
+    // pubModelState->publish(lidarState);
+    request->state = lidarState;
+    response = client->async_send_request(request);
 
     // status = ros::ok();
     // rate.sleep();
