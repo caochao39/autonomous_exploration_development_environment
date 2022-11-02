@@ -968,6 +968,7 @@ int main(int argc, char** argv)
           // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
           freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           freePaths2.header.frame_id = "vehicle";
+          std::cout << "FIRST PUB " << freePaths2.data.size() << std::endl;  
           pubFreePaths->publish(freePaths2);
           #endif
         }
@@ -1004,6 +1005,7 @@ int main(int argc, char** argv)
         // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
         freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
         freePaths2.header.frame_id = "vehicle";
+        std::cout << "PATH NOT FOUND " << freePaths2.data.size() << std::endl;  
         pubFreePaths->publish(freePaths2);
         #endif
       }

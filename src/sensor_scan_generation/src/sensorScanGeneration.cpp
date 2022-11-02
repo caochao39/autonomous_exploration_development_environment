@@ -135,14 +135,14 @@ int main(int argc, char** argv)
   sync_->registerCallback(boost::bind(laserCloudAndOdometryHandler, _1, _2));
   // ros::Publisher pubOdometry = nh.advertise<nav_msgs::Odometry> ("/state_estimation_at_scan", 5);
   // pubOdometryPointer = &pubOdometry;
-  auto pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5);
+  pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5);
 
   // tf::TransformBroadcaster tfBroadcaster;
   // tfBroadcasterPointer = &tfBroadcaster;
   tfBroadcasterPointer = std::make_unique<tf2_ros::TransformBroadcaster>(*nh);
 
   // pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/sensor_scan", 2);
-  auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/sensor_scan", 2);
+  pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/sensor_scan", 2);
 
   rclcpp::spin(nh);
 
