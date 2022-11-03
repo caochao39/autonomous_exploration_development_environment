@@ -106,11 +106,21 @@ include_directories(${QT_INCLUDE_DIRS})
 # ament_target_dependencies(waypoint_tool rclcpp rviz2 rviz_common rviz_default_plugins std_msgs geometry_msgs sensor_msgs pluginlib)
 # target_link_libraries(waypoint_tool Qt5::Widgets Qt5::Core Qt5::Quick rviz_ogre_vendor::OgreMain rviz_ogre_vendor::OgreOverlay)
 
+
+# target_compile_definitions(rviz_default_plugins PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
+
+# # prevent pluginlib from using boost
+# target_compile_definitions(rviz_default_plugins PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
+
+
+
 add_library(waypoint_rviz_plugin src/waypoint_tool.cpp)
 ament_target_dependencies(waypoint_rviz_plugin rclcpp rviz2 rviz_common rviz_default_plugins std_msgs geometry_msgs sensor_msgs pluginlib)
 target_link_libraries(waypoint_rviz_plugin Qt5::Widgets Qt5::Core Qt5::Quick rviz_ogre_vendor::OgreMain rviz_ogre_vendor::OgreOverlay)
 
-install(TARGETS
+install(TARGETS waypoint_rviz_plugin 
   DESTINATION lib/${PROJECT_NAME})
 
 install(
@@ -125,10 +135,19 @@ install(
 #   DESTINATION share/${PROJECT_NAME}
 # )
 
+install(
+  FILES 
+  plugin_description.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # install(
-#   FILES 
-#   plugin_description.xml
-#   DESTINATION share/${PROJECT_NAME}
+#   TARGETS rviz_default_plugins
+#   EXPORT rviz_default_plugins
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+#   INCLUDES DESTINATION include
 # )
 
 if(BUILD_TESTING)
@@ -137,4 +156,5 @@ if(BUILD_TESTING)
 endif()
 ament_export_include_directories(include)
 ament_export_libraries(${LIBRARIES})
+# ament_export_targets(waypoint_rviz_plugin HAS_LIBRARY_TARGET)
 ament_package()
