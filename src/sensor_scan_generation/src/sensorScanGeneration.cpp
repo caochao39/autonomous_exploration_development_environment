@@ -10,7 +10,7 @@
 
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
   subOdometry.subscribe(nh, "/state_estimation", qos_profile);
   subLaserCloud.subscribe(nh, "/registered_scan", qos_profile);
   sync_.reset(new Sync(syncPolicy(100), subOdometry, subLaserCloud));
-  sync_->registerCallback(boost::bind(laserCloudAndOdometryHandler, _1, _2));
+  sync_->registerCallback(std::bind(laserCloudAndOdometryHandler, placeholders::_1, placeholders::_2));
   // ros::Publisher pubOdometry = nh.advertise<nav_msgs::Odometry> ("/state_estimation_at_scan", 5);
   // pubOdometryPointer = &pubOdometry;
   pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5);
