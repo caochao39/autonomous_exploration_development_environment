@@ -3,10 +3,24 @@ project(velodyne_description)
 
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY launch meshes rviz urdf world
-  DESTINATION share/${PROJECT_NAME}
+ament_package()
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
 )
 
-ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/velodyne_description.dsv.in")
+install(DIRECTORY meshes/
+  DESTINATION share/${PROJECT_NAME}/meshes
+)
 
-ament_package()
+install(DIRECTORY rviz/
+  DESTINATION share/${PROJECT_NAME}/rviz
+)
+
+install(DIRECTORY urdf/
+  DESTINATION share/${PROJECT_NAME}/urdf
+)
+
+install(DIRECTORY world/
+  DESTINATION share/${PROJECT_NAME}/world
+)

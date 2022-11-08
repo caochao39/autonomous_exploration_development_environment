@@ -408,7 +408,7 @@ int main(int argc, char** argv)
   robotState.name = "robot";
 
   // ros::Publisher pubScan = nh.advertise<sensor_msgs::PointCloud2>("/registered_scan", 2);
-  auto pubScanPointer = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/registered_scan", 2);
+  pubScanPointer = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/registered_scan", 2);
   tf2::Quaternion quat_tf;
 
   // pubScanPointer = &pubScan;

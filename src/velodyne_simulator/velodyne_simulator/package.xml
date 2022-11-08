@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<package format="3">
+<package format="2">
   <name>velodyne_simulator</name>
-  <version>2.0.2</version>
+  <version>1.0.9</version>
   <description>
     Metapackage allowing easy installation of Velodyne simulation components.
   </description>
@@ -18,8 +18,10 @@
   <exec_depend>velodyne_description</exec_depend>
   <exec_depend>velodyne_gazebo_plugins</exec_depend>
 
+  <test_depend>ament_lint_auto</test_depend>
+
   <export>
-    <build_type>ament_cmake</build_type>
+   <build_type>ament_cmake</build_type>
   </export>
 
 </package>

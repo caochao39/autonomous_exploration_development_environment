@@ -32,15 +32,15 @@
   <arg name="verbose" default="false"/>
   <arg name="world_name" default="garage"/>
 
-  <include file="$(find-pkg-share gazebo_ros)/launch/gazebo.launch.py" >
+<!-- <include file="$(find-pkg-share gazebo_ros)/launch/gazebo.launch.py" >
     <arg name="pause" value="$(var paused)"/>
     <arg name="gui" value="$(var gui)"/>
     <arg name="gdb" value="$(var debug)"/>
     <arg name="verbose" value="$(var verbose)"/>
     <arg name="world" value="$(find-pkg-share vehicle_simulator)/world/$(var world_name).world"/>
-  </include>
+  </include> -->
 
-  <node pkg="gazebo_ros" exec="spawn_entity.py" name="spawn_camera" output="screen">
+    <!-- <node pkg="gazebo_ros" exec="spawn_entity.py" name="spawn_camera" output="screen">
     <param name="entity" value="camera" />
     <param name="file" value="$(find-pkg-share vehicle_simulator)/urdf/camera.urdf.xacro" />
   </node>
@@ -53,7 +53,7 @@
   <node pkg="gazebo_ros" exec="spawn_entity.py" name="spawn_robot" output="screen">
     <param name="entity" value="robot" />
     <param name="file" value="$(find-pkg-share vehicle_simulator)/urdf/robot.urdf.xacro" />
-  </node>
+  </node> -->
 
   <node pkg="vehicle_simulator" exec="vehicleSimulator" name="vehicleSimulator" output="screen">
     <param name="use_gazebo_time" value="false" />
