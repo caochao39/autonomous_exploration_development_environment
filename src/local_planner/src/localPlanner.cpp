@@ -966,7 +966,10 @@ int main(int argc, char** argv)
           sensor_msgs::msg::PointCloud2 freePaths2;
           pcl::toROSMsg(*freePaths, freePaths2);
           // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-          freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+
+          // stamp commented to prevent error : 
+          // [rvizGA]: Message Filter dropping message: frame 'vehicle' at time 0.660 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+          // freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           freePaths2.header.frame_id = "vehicle";
           // std::cout << "Path found - Size = " << freePaths2.data.size() << endl;
           pubFreePaths->publish(freePaths2);
@@ -1003,7 +1006,7 @@ int main(int argc, char** argv)
         sensor_msgs::msg::PointCloud2 freePaths2;
         pcl::toROSMsg(*freePaths, freePaths2);
         // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-        freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+        // freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
         freePaths2.header.frame_id = "vehicle";
         // std::cout << "PATH NOT FOUND " << freePaths2.data.size() << std::endl;  
         pubFreePaths->publish(freePaths2);
