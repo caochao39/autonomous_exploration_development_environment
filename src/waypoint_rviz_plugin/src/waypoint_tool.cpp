@@ -1,5 +1,5 @@
 #include <waypoint_rviz_plugin/waypoint_tool.h>
-// #include <waypoint_tool.h>
+#include <pluginlib/class_list_macros.hpp>
 
 namespace waypoint_rviz_plugin
 {
@@ -77,6 +77,5 @@ void WaypointTool::onPoseSet(double x, double y, double theta)
 }
 }
 
-#include <pluginlib/class_list_macros.hpp>
 // PLUGINLIB_EXPORT_CLASS(rviz::WaypointTool, rviz::Tool)
 PLUGINLIB_EXPORT_CLASS(waypoint_rviz_plugin::WaypointTool, rviz_common::Tool)

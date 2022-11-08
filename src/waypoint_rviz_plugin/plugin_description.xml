@@ -1,39 +1,9 @@
 <library path="waypoint_rviz_plugin">
-  <class
-    name="waypoint_rviz_plugin/WaypointTool"
-    type="waypoint_rviz_plugin::WaypointTool"
-    base_class_type="rviz_common::Tool"
-  >
-  <!-- <class 
-    type="waypoint_rviz_plugin::WaypointTool" 
-    base_class_type="rviz_common::Tool"> -->
-    <description> A tool for sending waypoints</description>
+  <class name="waypoint_rviz_plugin/WaypointTool"
+         type="waypoint_rviz_plugin::WaypointTool"
+         base_class_type="rviz_common::Tool">
+    <description>
+      A tool for sending waypoints
+    </description>
   </class>
 </library>
-
-<!-- <library path="waypoint_rviz_plugin">
-  <class 
-    type="waypoint_rviz_plugin::WaypointTool" 
-    base_class_type="rviz_default_plugins::tools::PoseTool">
-    <description> A tool for sending waypoints</description>
-  </class>
-</library> -->
-<!-- 
-<library path="lib/libwaypoint_rviz_plugin">
-    <class name="waypoint_rviz_plugin/WaypointTool"
-           type="waypoint_rviz_plugin::WaypointTool"
-           base_class_type="rviz_default_plugins::tools::PoseTool">
-        <description>
-            A tool for sending waypoints
-        </description>
-    </class>
-</library> -->
-  <!-- <class
-    name="rviz_default_plugins/MoveCamera"
-    type="rviz_default_plugins::tools::MoveTool"
-    base_class_type="rviz_common::Tool"
-  >
-    <description>
-      Drag the mouse with left, middle, or right buttons to change your viewpoint.
-    </description>
-  </class> -->
