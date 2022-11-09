@@ -115,7 +115,6 @@ class SpawnEntityNode(Node):
         # Convert position of joints to floats
         # for i in range(len(self.args.joints)):
         #     self.args.joints[i][1] = float(self.args.joints[i][1])
-        print("INIT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     def run(self):
         """
@@ -141,9 +140,7 @@ class SpawnEntityNode(Node):
                 pass
 
         # Load entity XML from file
-        print("Entity value assigned", self.args.entity)
         if self.args.file:
-            print("Loading entity from file now.")
             self.get_logger().info('Loading entity XML from file %s' % self.args.file)
             if not os.path.exists(self.args.file):
                 self.get_logger().error('Error: specified file %s does not exist', self.args.file)
@@ -163,8 +160,6 @@ class SpawnEntityNode(Node):
             if entity_xml == '':
                 self.get_logger().error('Error: file %s is empty', self.args.file)
                 return 1
-            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ USING FILE $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-            print(entity_xml)
 
         # Load entity XML published on topic specified
         elif self.args.topic:
@@ -186,8 +181,6 @@ class SpawnEntityNode(Node):
                 self.get_logger().info('Waiting for entity xml on %s' % self.args.topic)
                 rclpy.spin_once(self)
                 pass
-            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ USING TOPIC $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-            print(entity_xml)
 
         # Generate entity XML by putting requested entity name into request template
         elif self.args.database:

@@ -41,7 +41,7 @@
     <arg name="world_name" value="$(var world_name)"/>
   </include>
 
-  <!-- <node pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz" respawn="true"/>  -->
-  <node pkg="rviz2" exec="rviz2" name="rvizGA" respawn="true"/> 
+  <node pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz" respawn="true"/> 
+  <!-- <node pkg="rviz2" exec="rviz2" name="rvizGA" respawn="true"/>  -->
 
 </launch>
