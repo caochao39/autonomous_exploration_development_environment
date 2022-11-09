@@ -34,6 +34,11 @@ def generate_launch_description():
                     get_package_share_directory('gazebo_ros'), 'launch'), '/gazebo.launch.py']),
              )
 
+    joy = IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('joy'), 'launch'), '/joy-launch.py']),
+             )
+
     robot_xacro = os.path.join(get_package_share_directory('vehicle_simulator'),
                               'urdf',
                               'robot.urdf.xacro')
@@ -67,8 +72,14 @@ def generate_launch_description():
             default_value=[os.path.join(get_package_share_directory('vehicle_simulator'), 'world', 'garage.world')],
             description='SDF world file',
         ),
+        DeclareLaunchArgument(
+            'gui',
+            default_value='false',
+            description='Run headless if false',
+        ),
         gazebo,
         spawn_robot,
         spawn_lidar,
-        spawn_camera
+        spawn_camera,
+        joy
     ])
