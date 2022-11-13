@@ -9,6 +9,9 @@
   <link name="base_origin">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
     </visual>
   </link>
 

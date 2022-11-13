@@ -24,7 +24,7 @@
     <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
   </include>
 
-  <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch" >
+  <!-- <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch" >
     <arg name="world_name" value="$(var world_name)"/>
     <arg name="vehicleHeight" value="$(var vehicleHeight)"/>
     <arg name="cameraOffsetZ" value="$(var cameraOffsetZ)"/>
@@ -33,7 +33,7 @@
     <arg name="terrainZ" value="$(var terrainZ)"/>
     <arg name="vehicleYaw" value="$(var vehicleYaw)"/>
     <arg name="gui" value="$(var gazebo_gui)"/>
-  </include>
+  </include> -->
 
   <include file="$(find-pkg-share sensor_scan_generation)/launch/sensor_scan_generation.launch" />
 

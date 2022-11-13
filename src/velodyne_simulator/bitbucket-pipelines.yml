@@ -1,52 +1,43 @@
-# Docker image from Docker Hub
-image: osrf/ros:kinetic-desktop-full
-
 pipelines:
   default:
     - parallel:
       - step:
-          name: kinetic
-          image: osrf/ros:kinetic-desktop-full
+          name: foxy
+          image: ros:foxy
           script:
             - mkdir -p /tmp/src/repo && mv `pwd`/* /tmp/src/repo && mv /tmp/src `pwd`  # Move everything into the src directory
-            - source `find /opt/ros -name setup.bash | sort | head -1` && echo $ROS_DISTRO # Source ROS environment
+            - source `find /opt/ros -name setup.bash | sort | tail -1` && echo $ROS_DISTRO # Source ROS environment
             - apt update && rosdep install --from-paths src --ignore-src -y # Install dependencies missing from the docker image
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args tests
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args run_tests -j1
-            - catkin_test_results build_isolated
+            - colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+            - colcon test
+            - colcon test-result
       - step:
-          name: lunar
-          image: osrf/ros:lunar-desktop-full
+          name: galactic
+          image: ros:galactic
           script:
             - mkdir -p /tmp/src/repo && mv `pwd`/* /tmp/src/repo && mv /tmp/src `pwd`  # Move everything into the src directory
-            - source `find /opt/ros -name setup.bash | sort | head -1` && echo $ROS_DISTRO # Source ROS environment
+            - source `find /opt/ros -name setup.bash | sort | tail -1` && echo $ROS_DISTRO # Source ROS environment
             - apt update && rosdep install --from-paths src --ignore-src -y # Install dependencies missing from the docker image
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args tests
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args run_tests -j1
-            - catkin_test_results build_isolated
+            - colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+            - colcon test
+            - colcon test-result
       - step:
-          name: melodic
-          image: osrf/ros:melodic-desktop-full
+          name: humble
+          image: ros:humble
           script:
             - mkdir -p /tmp/src/repo && mv `pwd`/* /tmp/src/repo && mv /tmp/src `pwd`  # Move everything into the src directory
-            - source `find /opt/ros -name setup.bash | sort | head -1` && echo $ROS_DISTRO # Source ROS environment
+            - source `find /opt/ros -name setup.bash | sort | tail -1` && echo $ROS_DISTRO # Source ROS environment
             - apt update && rosdep install --from-paths src --ignore-src -y # Install dependencies missing from the docker image
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args tests
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args run_tests -j1
-            - catkin_test_results build_isolated
-  branches:
-    gazebo2:
+            - colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+            - colcon test
+            - colcon test-result
       - step:
-          name: indigo
-          image: osrf/ros:indigo-desktop-full
+          name: rolling
+          image: ros:rolling
           script:
             - mkdir -p /tmp/src/repo && mv `pwd`/* /tmp/src/repo && mv /tmp/src `pwd`  # Move everything into the src directory
-            - source `find /opt/ros -name setup.bash | sort | head -1` && echo $ROS_DISTRO # Source ROS environment
+            - source `find /opt/ros -name setup.bash | sort | tail -1` && echo $ROS_DISTRO # Source ROS environment
             - apt update && rosdep install --from-paths src --ignore-src -y # Install dependencies missing from the docker image
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args tests
-            - catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --make-args run_tests -j1
-            - catkin_test_results build_isolated
+            - colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+            - colcon test
+            - colcon test-result
