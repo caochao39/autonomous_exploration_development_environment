@@ -15,7 +15,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt5 REQUIRED COMPONENTS Core)
@@ -23,27 +22,41 @@ find_package(Qt5 REQUIRED COMPONENTS Quick)
 find_package(rclcpp REQUIRED)
 find_package(rviz2 REQUIRED)
 find_package(rviz_common REQUIRED)
+find_package(rviz_rendering REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
 
+set(HDR_FILES
+    include/waypoint_tool.hpp
+)
+
+foreach(header "${HDR_FILES}")
+  qt5_wrap_cpp(rviz_plugins_moc_files "${header}")
+endforeach()
+
 ## Here we specify the list of source files.
 ## The generated MOC files are included automatically as headers.
+set(HDR_FILES
+    include/waypoint_tool.hpp
+)
+
 set(SRC_FILES
   src/waypoint_tool.cpp
 )
 
-## An rviz plugin is just a shared library, so here we declare the
-## library to be called ``${PROJECT_NAME}`` (which is
-## "rviz_plugin_tutorials", or whatever your version of this project
-## is called) and specify the list of source files we collected above
-## in ``${SRC_FILES}``. We also add the needed dependencies.
-add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+include_directories(include)
+
+add_library(${PROJECT_NAME} SHARED ${SRC_FILES} ${HDR_FILES} ${rviz_plugins_moc_files})
+
 ament_target_dependencies(${PROJECT_NAME}
+  PUBLIC
   "geometry_msgs"
   "rclcpp"
   "rviz_common"
@@ -57,7 +70,13 @@ ament_target_dependencies(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS})
 
-include_directories(include)
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${rviz_common}
+  ${rviz_rendering}
+  ${rviz_default_plugins}
+  ${pluginlib}
+)
+
 
 ## Here we export the plugins and meshes so they can be found by RViz at runtime.
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
@@ -79,8 +98,9 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(TARGETS
-  ${PROJECT_NAME}
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME} 
   ARCHIVE DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION lib/${PROJECT_NAME}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
