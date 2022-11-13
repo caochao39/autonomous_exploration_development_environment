@@ -8,11 +8,12 @@ Panels:
         - /Waypoint1/Topic1
         - /OverallMap1/Topic1
       Splitter Ratio: 0.5
-    Tree Height: 719
+    Tree Height: 363
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
-    Expanded: ~
+    Expanded:
+      - /Waypoint1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
@@ -163,7 +164,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 90.96726989746094
+      Max Intensity: 0.41379594802856445
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Trajectory
@@ -386,6 +387,13 @@ Visualization Manager:
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
+    - Class: waypoint_rviz_plugin/WaypointTool
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: waypoint
   Transformation:
     Current:
       Class: rviz_default_plugins/TF

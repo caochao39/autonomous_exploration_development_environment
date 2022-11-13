@@ -2,10 +2,11 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, RegisterEventHandler, LogInfo, ExecuteProcess, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.event_handlers import OnExecutionComplete
 
 def declare_world_action(context, world_name):
   world_name_str = str(world_name.perform(context))
@@ -132,10 +133,10 @@ def generate_launch_description():
       get_package_share_directory('joy'), 'launch', 'joy-launch.py'))
   )
 
-  start_vehicle_simulator = IncludeLaunchDescription(
-    PythonLaunchDescriptionSource(os.path.join(
-      get_package_share_directory('vehicle_simulator'), 'launch', 'vehicle.launch.py'))
-  )
+  # start_vehicle_simulator = IncludeLaunchDescription(
+  #   PythonLaunchDescriptionSource(os.path.join(
+  #     get_package_share_directory('vehicle_simulator'), 'launch', 'vehicle.launch.py'))
+  # )
 
   start_vehicle_simulator = Node(
     package='vehicle_simulator', 
@@ -167,6 +168,46 @@ def generate_launch_description():
       }
       ],
       output='screen'
+  )
+
+  # spawn_nothing = ExecuteProcess(
+  #       cmd=[[
+  #           FindExecutable(name='ros2'),
+  #           ' service call ',
+  #           turtlesim_ns,
+  #           '/spawn ',
+  #           'turtlesim/srv/Spawn ',
+  #           '"{x: 2, y: 2, theta: 0.2}"'
+  #       ]],
+  #       shell=True
+  #   )
+
+  # delayed_start_vehicle_simulator = RegisterEventHandler(
+  #   OnExecutionComplete(
+  #     target_action=spawn_nothing,
+  #     on_completion=[
+  #       LogInfo(msg='Spawn robot finished'),
+  #       start_vehicle_simulator,
+  #       # TimerAction(
+  #       #   period=2.0,
+  #       #   actions=[change_background_r_conditioned],
+  #       # )
+  #     ]
+  #   )
+  # )
+  
+  delayed_start_vehicle_simulator = TimerAction(
+    period=5.0,
+    actions=[
+      start_vehicle_simulator
+    ]
+  )
+
+  delayed_start_rviz = TimerAction(
+    period=8.0,
+    actions=[
+      start_rviz
+    ]
   )
 
   ld = LaunchDescription()
@@ -207,6 +248,7 @@ def generate_launch_description():
   ld.add_action(spawn_robot)
   ld.add_action(spawn_camera)
   ld.add_action(start_joy)
-  ld.add_action(start_vehicle_simulator)
+  ld.add_action(delayed_start_vehicle_simulator)
+  # ld.add_action(delayed_start_rviz)
 
   return ld
