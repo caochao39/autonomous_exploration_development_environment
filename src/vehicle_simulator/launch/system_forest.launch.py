@@ -19,7 +19,7 @@ def generate_launch_description():
   gazebo_gui = LaunchConfiguration('gazebo_gui')
   checkTerrainConn = LaunchConfiguration('checkTerrainConn')
   
-  declare_world_name = DeclareLaunchArgument('world_name', default_value='garage', description='')
+  declare_world_name = DeclareLaunchArgument('world_name', default_value='forest', description='')
   declare_vehicleHeight = DeclareLaunchArgument('vehicleHeight', default_value='0.75', description='')
   declare_cameraOffsetZ = DeclareLaunchArgument('cameraOffsetZ', default_value='0.0', description='')
   declare_vehicleX = DeclareLaunchArgument('vehicleX', default_value='0.0', description='')
