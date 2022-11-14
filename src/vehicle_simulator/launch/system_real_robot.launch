@@ -1,28 +1,28 @@
 <launch>
 
-  <arg name="cameraOffsetZ" default="0"/>
-  <arg name="vehicleX" default="0"/>
-  <arg name="vehicleY" default="0"/>
+  <arg name="cameraOffsetZ" default="0.0"/>
+  <arg name="vehicleX" default="0.0"/>
+  <arg name="vehicleY" default="0.0"/>
   <arg name="checkTerrainConn" default="false"/>
 
-  <include file="$(find ps3joy)/launch/ps3.launch" />
+  <include file="$(find-pkg-share ps3joy)/launch/ps3.launch" />
 
-  <include file="$(find local_planner)/launch/local_planner.launch" >
-    <arg name="cameraOffsetZ" value="$(arg cameraOffsetZ)"/>
-    <arg name="goalX" value="$(arg vehicleX)"/>
-    <arg name="goalY" value="$(arg vehicleY)"/>
+  <include file="$(find-pkg-share local_planner)/launch/local_planner.launch" >
+    <arg name="cameraOffsetZ" value="$(var cameraOffsetZ)"/>
+    <arg name="goalX" value="$(var vehicleX)"/>
+    <arg name="goalY" value="$(var vehicleY)"/>
   </include>
 
-  <include file="$(find terrain_analysis)/launch/terrain_analysis.launch" />
+  <include file="$(find-pkg-share terrain_analysis)/launch/terrain_analysis.launch" />
 
-  <include file="$(find terrain_analysis_ext)/launch/terrain_analysis_ext.launch" >
-    <arg name="checkTerrainConn" value="$(arg checkTerrainConn)"/>
+  <include file="$(find-pkg-share terrain_analysis_ext)/launch/terrain_analysis_ext.launch" >
+    <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
   </include>
 
-  <include file="$(find sensor_scan_generation)/launch/sensor_scan_generation.launch" />
+  <include file="$(find-pkg-share sensor_scan_generation)/launch/sensor_scan_generation.launch" />
 
-  <include file="$(find loam_interface)/launch/loam_interface.launch" />
+  <include file="$(find-pkg-share loam_interface)/launch/loam_interface.launch" />
 
-  <node launch-prefix="nice" pkg="rviz" type="rviz" name="rvizGA" args="-d $(find vehicle_simulator)/rviz/vehicle_simulator.rviz" respawn="true"/>
+  <node pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz" respawn="true"/>
 
 </launch>
