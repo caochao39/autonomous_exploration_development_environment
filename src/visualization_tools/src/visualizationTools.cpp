@@ -95,8 +95,7 @@ FILE *trajFilePtr = NULL;
 
 void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
-  // systemTime = odom->header.stamp.toSec();
-  systemTime = std::chrono::duration<double>(std::chrono::nanoseconds(odom->header.stamp.nanosec)).count();
+  systemTime = rclcpp::Time(odom->header.stamp).seconds();
   double roll, pitch, yaw;
   geometry_msgs::msg::Quaternion geoQuat = odom->pose.pose.orientation;
   tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
