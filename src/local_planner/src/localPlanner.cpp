@@ -23,7 +23,7 @@
 
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -697,10 +697,6 @@ int main(int argc, char** argv)
         *plannerCloud = *terrainCloudDwz;
       }
 
-      float sinVehicleRoll = sin(vehicleRoll);
-      float cosVehicleRoll = cos(vehicleRoll);
-      float sinVehiclePitch = sin(vehiclePitch);
-      float cosVehiclePitch = cos(vehiclePitch);
       float sinVehicleYaw = sin(vehicleYaw);
       float cosVehicleYaw = cos(vehicleYaw);
 
