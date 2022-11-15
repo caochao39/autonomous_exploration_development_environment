@@ -137,8 +137,7 @@ rclcpp::Node::SharedPtr nh;
 
 void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
-  // odomTime = odom->header.stamp.toSec();
-  odomTime = std::chrono::duration<double>(std::chrono::nanoseconds(odom->header.stamp.nanosec)).count();
+  odomTime = rclcpp::Time(odom->header.stamp).seconds();
   double roll, pitch, yaw;
   geometry_msgs::msg::Quaternion geoQuat = odom->pose.pose.orientation;
   tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
@@ -219,7 +218,6 @@ void terrainCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr ter
 
 void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 {
-  // joyTime = ros::Time::now().toSec();
   joyTime = nh->now().seconds();
   joySpeedRaw = sqrt(joy->axes[3] * joy->axes[3] + joy->axes[4] * joy->axes[4]);
   joySpeed = joySpeedRaw;
@@ -254,7 +252,6 @@ void goalHandler(const geometry_msgs::msg::PointStamped::ConstSharedPtr goal)
 
 void speedHandler(const std_msgs::msg::Float32::ConstSharedPtr speed)
 {
-  // double speedTime = ros::Time::now().toSec();
   double speedTime = nh->now().seconds();
   if (autonomyMode && speedTime - joyTime > joyToSpeedDelay && joySpeedRaw == 0) {
     joySpeed = speed->data / maxSpeed;
@@ -316,7 +313,6 @@ void addedObstaclesHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr a
 
 void checkObstacleHandler(const std_msgs::msg::Bool::ConstSharedPtr checkObs)
 {
-  // double checkObsTime = ros::Time::now().toSec();
   double checkObsTime = nh->now().seconds();
   if (autonomyMode && checkObsTime - joyTime > joyToCheckObstacleDelay) {
     checkObstacle = checkObs->data;
@@ -503,9 +499,6 @@ void readCorrespondences()
 
 int main(int argc, char** argv)
 {
-  // ros::init(argc, argv, "localPlanner");
-  // ros::NodeHandle nh;
-  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
   rclcpp::init(argc, argv);
   nh = rclcpp::Node::make_shared("localPlanner");
 
@@ -591,42 +584,31 @@ int main(int argc, char** argv)
 
   // No direct replacement for $(find pkg) in ROS2.
   pathFolder.replace(pathFolder.find("/install/"),8,"/src");
-  // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry>
-  //                               ("/state_estimation", 5, odometryHandler);
+  
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>
-  //                                 ("/registered_scan", 5, laserCloudHandler);
+  
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  // ros::Subscriber subTerrainCloud = nh.subscribe<sensor_msgs::PointCloud2>
-  //                                   ("/terrain_map", 5, terrainCloudHandler);
+  
   auto subTerrainCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/terrain_map", 5, terrainCloudHandler);
 
-  // ros::Subscriber subJoystick = nh.subscribe<sensor_msgs::Joy> ("/joy", 5, joystickHandler);
   auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
 
-  // ros::Subscriber subGoal = nh.subscribe<geometry_msgs::PointStamped> ("/way_point", 5, goalHandler);
   auto subGoal = nh->create_subscription<geometry_msgs::msg::PointStamped> ("/way_point", 5, goalHandler);
 
-  // ros::Subscriber subSpeed = nh.subscribe<std_msgs::Float32> ("/speed", 5, speedHandler);
   auto subSpeed = nh->create_subscription<std_msgs::msg::Float32>("/speed", 5, speedHandler);
 
-  // ros::Subscriber subBoundary = nh.subscribe<geometry_msgs::PolygonStamped> ("/navigation_boundary", 5, boundaryHandler);
   auto subBoundary = nh->create_subscription<geometry_msgs::msg::PolygonStamped>("/navigation_boundary", 5, boundaryHandler);
 
-  // ros::Subscriber subAddedObstacles = nh.subscribe<sensor_msgs::PointCloud2> ("/added_obstacles", 5, addedObstaclesHandler);
   auto subAddedObstacles = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/added_obstacles", 5, addedObstaclesHandler);
 
-  // ros::Subscriber subCheckObstacle = nh.subscribe<std_msgs::Bool> ("/check_obstacle", 5, checkObstacleHandler);
   auto subCheckObstacle = nh->create_subscription<std_msgs::msg::Bool>("/check_obstacle", 5, checkObstacleHandler);
 
-  // ros::Publisher pubPath = nh.advertise<nav_msgs::Path> ("/path", 5);
   auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("/path", 5);
   nav_msgs::msg::Path path;
 
   #if PLOTPATHSET == 1
-  // ros::Publisher pubFreePaths = nh.advertise<sensor_msgs::PointCloud2> ("/free_paths", 2);
   auto pubFreePaths = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/free_paths", 2);
   #endif
 
@@ -668,12 +650,9 @@ int main(int argc, char** argv)
 
   printf ("\nInitialization complete.\n\n");
 
-  // ros::Rate rate(100);
-  // bool status = ros::ok();
   rclcpp::Rate rate(100);
   bool status = rclcpp::ok();
   while (status) {
-    // ros::spinOnce();
     rclcpp::spin_some(nh);
 
     if (newLaserCloud || newTerrainCloud) {
@@ -914,8 +893,7 @@ int main(int argc, char** argv)
             }
           }
 
-          // path.header.stamp = ros::Time().fromSec(odomTime);
-          // path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+          path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           path.header.frame_id = "vehicle";
           pubPath->publish(path);
 
@@ -961,13 +939,8 @@ int main(int argc, char** argv)
 
           sensor_msgs::msg::PointCloud2 freePaths2;
           pcl::toROSMsg(*freePaths, freePaths2);
-          // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-
-          // stamp commented to prevent error : 
-          // [rvizGA]: Message Filter dropping message: frame 'vehicle' at time 0.660 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
-          // freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+          freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           freePaths2.header.frame_id = "vehicle";
-          // std::cout << "Path found - Size = " << freePaths2.data.size() << endl;
           pubFreePaths->publish(freePaths2);
           #endif
         }
@@ -992,8 +965,7 @@ int main(int argc, char** argv)
         path.poses[0].pose.position.y = 0;
         path.poses[0].pose.position.z = 0;
 
-        // path.header.stamp = ros::Time().fromSec(odomTime);
-        // path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+        path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
         path.header.frame_id = "vehicle";
         pubPath->publish(path);
 
@@ -1001,10 +973,8 @@ int main(int argc, char** argv)
         freePaths->clear();
         sensor_msgs::msg::PointCloud2 freePaths2;
         pcl::toROSMsg(*freePaths, freePaths2);
-        // freePaths2.header.stamp = ros::Time().fromSec(odomTime);
-        // freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
+        freePaths2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
         freePaths2.header.frame_id = "vehicle";
-        // std::cout << "PATH NOT FOUND " << freePaths2.data.size() << std::endl;  
         pubFreePaths->publish(freePaths2);
         #endif
       }
@@ -1016,7 +986,6 @@ int main(int argc, char** argv)
       pubLaserCloud.publish(plannerCloud2);*/
     }
 
-    // status = ros::ok();
     status = rclcpp::ok();
     rate.sleep();
   }

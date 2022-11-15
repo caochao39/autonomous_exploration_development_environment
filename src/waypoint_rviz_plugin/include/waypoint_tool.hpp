@@ -17,9 +17,6 @@
 #include <rviz_common/properties/string_property.hpp>
 #include <rviz_common/tool.hpp>
 
-// class rviz_common::properties::StringProperty;
-// class rviz_common::properties::QosProfileProperty;
-
 namespace rviz_common
 {
 class DisplayContext;

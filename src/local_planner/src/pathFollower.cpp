@@ -104,8 +104,7 @@ rclcpp::Node::SharedPtr nh;
 
 void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odomIn)
 {
-  // odomTime = odomIn->header.stamp.toSec();
-  odomTime = std::chrono::duration<double>(std::chrono::nanoseconds(odomIn->header.stamp.nanosec)).count();
+  odomTime = rclcpp::Time(odomIn->header.stamp).seconds();
   double roll, pitch, yaw;
   geometry_msgs::msg::Quaternion geoQuat = odomIn->pose.pose.orientation;
   tf2::Matrix3x3(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
@@ -118,13 +117,11 @@ void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odomIn)
   vehicleZ = odomIn->pose.pose.position.z;
 
   if ((fabs(roll) > inclThre * PI / 180.0 || fabs(pitch) > inclThre * PI / 180.0) && useInclToStop) {
-    // stopInitTime = odomIn->header.stamp.toSec();
-    stopInitTime = std::chrono::duration<double>(std::chrono::nanoseconds(odomIn->header.stamp.nanosec)).count();
+    stopInitTime = rclcpp::Time(odomIn->header.stamp).seconds();
   }
 
   if ((fabs(odomIn->twist.twist.angular.x) > inclRateThre * PI / 180.0 || fabs(odomIn->twist.twist.angular.y) > inclRateThre * PI / 180.0) && useInclRateToSlow) {
-    // slowInitTime = odomIn->header.stamp.toSec();
-    slowInitTime = std::chrono::duration<double>(std::chrono::nanoseconds(odomIn->header.stamp.nanosec)).count();
+    slowInitTime = rclcpp::Time(odomIn->header.stamp).seconds();
   }
 }
 
@@ -151,8 +148,7 @@ void pathHandler(const nav_msgs::msg::Path::ConstSharedPtr pathIn)
 
 void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 {
-  // joyTime = ros::Time::now().toSec();
-  joyTime = nh->now().seconds(); //std::chrono::duration<double>(std::chrono::nanoseconds(odomIn->header.stamp.nanosec)).count();
+  joyTime = nh->now().seconds(); 
   joySpeedRaw = sqrt(joy->axes[3] * joy->axes[3] + joy->axes[4] * joy->axes[4]);
   joySpeed = joySpeedRaw;
   if (joySpeed > 1.0) joySpeed = 1.0;
@@ -174,7 +170,6 @@ void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 
 void speedHandler(const std_msgs::msg::Float32::ConstSharedPtr speed)
 {
-  // double speedTime = ros::Time::now().toSec();
   double speedTime = nh->now().seconds();
   if (autonomyMode && speedTime - joyTime > joyToSpeedDelay && joySpeedRaw == 0) {
     joySpeed = speed->data / maxSpeed;
@@ -191,9 +186,6 @@ void stopHandler(const std_msgs::msg::Int8::ConstSharedPtr stop)
 
 int main(int argc, char** argv)
 {
-  // ros::init(argc, argv, "pathFollower");
-  // ros::NodeHandle nh;
-  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
   rclcpp::init(argc, argv);
   nh = rclcpp::Node::make_shared("pathFollower");
 
@@ -255,22 +247,16 @@ int main(int argc, char** argv)
   nh->get_parameter("autonomySpeed", autonomySpeed);
   nh->get_parameter("joyToSpeedDelay", joyToSpeedDelay);
 
-  // ros::Subscriber subOdom = nh.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, odomHandler);
   auto subOdom = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odomHandler);
 
-  // ros::Subscriber subPath = nh.subscribe<nav_msgs::Path> ("/path", 5, pathHandler);
   auto subPath = nh->create_subscription<nav_msgs::msg::Path>("/path", 5, pathHandler);
 
-  // ros::Subscriber subJoystick = nh.subscribe<sensor_msgs::Joy> ("/joy", 5, joystickHandler);
   auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
 
-  // ros::Subscriber subSpeed = nh.subscribe<std_msgs::Float32> ("/speed", 5, speedHandler);
   auto subSpeed = nh->create_subscription<std_msgs::msg::Float32>("/speed", 5, speedHandler);
 
-  // ros::Subscriber subStop = nh.subscribe<std_msgs::Int8> ("/stop", 5, stopHandler);
   auto subStop = nh->create_subscription<std_msgs::msg::Int8>("/stop", 5, stopHandler);
 
-  // ros::Publisher pubSpeed = nh.advertise<geometry_msgs::TwistStamped> ("/cmd_vel", 5);
   auto pubSpeed = nh->create_publisher<geometry_msgs::msg::TwistStamped>("/cmd_vel", 5);
 
   geometry_msgs::msg::TwistStamped cmd_vel;
@@ -283,12 +269,9 @@ int main(int argc, char** argv)
     else if (joySpeed > 1.0) joySpeed = 1.0;
   }
 
-  // ros::Rate rate(100);
-  // bool status = ros::ok();
   rclcpp::Rate rate(100);
   bool status = rclcpp::ok();
   while (status) {
-    // ros::spinOnce();
     rclcpp::spin_some(nh);
 
     if (pathInit) {
@@ -326,7 +309,6 @@ int main(int argc, char** argv)
       else if (dirDiff < -PI) dirDiff += 2 * PI;
 
       if (twoWayDrive) {
-        // double time = ros::Time::now().toSec();
         double time = nh->now().seconds();
         if (fabs(dirDiff) > PI / 2 && navFwd && time - switchTime > switchTimeThre) {
           navFwd = false;
@@ -384,7 +366,6 @@ int main(int argc, char** argv)
 
       pubSkipCount--;
       if (pubSkipCount < 0) {
-        // cmd_vel.header.stamp = ros::Time().fromSec(odomTime);
         cmd_vel.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
         if (fabs(vehicleSpeed) <= maxAccel / 100.0) cmd_vel.twist.linear.x = 0;
         else cmd_vel.twist.linear.x = vehicleSpeed;
@@ -395,7 +376,6 @@ int main(int argc, char** argv)
       }
     }
 
-    // status = ros::ok();
     status = rclcpp::ok();
     rate.sleep();
   }

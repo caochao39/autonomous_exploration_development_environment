@@ -38,14 +38,10 @@ bool newTransformToMap = false;
 
 nav_msgs::msg::Odometry odometryIn;
 shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> pubOdometryPointer;
-// ros::Publisher *pubOdometryPointer = NULL;
-// tf::StampedTransform transformToMap;
 tf2::Stamped<tf2::Transform> transformToMap;
 geometry_msgs::msg::TransformStamped transformTfGeom ; 
-// tf::TransformBroadcaster *tfBroadcasterPointer = NULL;
 
 unique_ptr<tf2_ros::TransformBroadcaster> tfBroadcasterPointer;
-// ros::Publisher pubLaserCloud;
 shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubLaserCloud;
 
 void laserCloudAndOdometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odometry,
@@ -133,15 +129,10 @@ int main(int argc, char** argv)
   subLaserCloud.subscribe(nh, "/registered_scan", qos_profile);
   sync_.reset(new Sync(syncPolicy(100), subOdometry, subLaserCloud));
   sync_->registerCallback(std::bind(laserCloudAndOdometryHandler, placeholders::_1, placeholders::_2));
-  // ros::Publisher pubOdometry = nh.advertise<nav_msgs::Odometry> ("/state_estimation_at_scan", 5);
-  // pubOdometryPointer = &pubOdometry;
   pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5);
 
-  // tf::TransformBroadcaster tfBroadcaster;
-  // tfBroadcasterPointer = &tfBroadcaster;
   tfBroadcasterPointer = std::make_unique<tf2_ros::TransformBroadcaster>(*nh);
 
-  // pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/sensor_scan", 2);
   pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/sensor_scan", 2);
 
   rclcpp::spin(nh);

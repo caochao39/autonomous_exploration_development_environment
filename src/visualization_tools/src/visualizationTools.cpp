@@ -74,19 +74,14 @@ pcl::VoxelGrid<pcl::PointXYZI> exploredVolumeDwzFilter;
 
 sensor_msgs::msg::PointCloud2 overallMap2;
 
-// ros::Publisher *pubExploredAreaPtr = NULL;
 shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubExploredAreaPtr;
 
-// ros::Publisher *pubTrajectoryPtr = NULL;
 shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pubTrajectoryPtr;
 
-// ros::Publisher *pubExploredVolumePtr = NULL;
 shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubExploredVolumePtr;
 
-// ros::Publisher *pubTravelingDisPtr = NULL;
 shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubTravelingDisPtr;
 
-// ros::Publisher *pubTimeDurationPtr = NULL;
 shared_ptr<rclcpp::Publisher<std_msgs::msg::Float32>> pubTimeDurationPtr;
 
 
@@ -225,9 +220,6 @@ void runtimeHandler(const std_msgs::msg::Float32::ConstSharedPtr runtimeIn)
 
 int main(int argc, char** argv)
 {
-  // ros::init(argc, argv, "visualizationTools");
-  // ros::NodeHandle nh;
-  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("visualizationTools");
 
@@ -257,39 +249,23 @@ int main(int argc, char** argv)
   metricFile.replace(metricFile.find("/install/"),8,"/src");
   trajFile.replace(trajFile.find("/install/"),8,"/src");
   mapFile.replace(mapFile.find("/install/"),8,"/src");
-  // ros::Subscriber subOdometry = nh.subscribe<nav_msgs::Odometry> ("/state_estimation", 5, odometryHandler);
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2> ("/registered_scan", 5, laserCloudHandler);
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  // ros::Subscriber subRuntime = nh.subscribe<std_msgs::Float32> ("/runtime", 5, runtimeHandler);
   auto subRuntime = nh->create_subscription<std_msgs::msg::Float32>("/runtime", 5, runtimeHandler);
 
-  // ros::Publisher pubOverallMap = nh.advertise<sensor_msgs::PointCloud2> ("/overall_map", 5);
   auto pubOverallMap = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/overall_map", 5);
 
-  // ros::Publisher pubExploredArea = nh.advertise<sensor_msgs::PointCloud2> ("/explored_areas", 5);
-  // pubExploredAreaPtr = &pubExploredArea;
   pubExploredAreaPtr = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/explored_areas", 5);
 
-  // ros::Publisher pubTrajectory = nh.advertise<sensor_msgs::PointCloud2> ("/trajectory", 5);
-  // pubTrajectoryPtr = &pubTrajectory;
   pubTrajectoryPtr = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/trajectory", 5);
   
-  // ros::Publisher pubExploredVolume = nh.advertise<std_msgs::Float32> ("/explored_volume", 5);
-  // pubExploredVolumePtr = &pubExploredVolume;
   pubExploredVolumePtr = nh->create_publisher<std_msgs::msg::Float32>("/explored_volume", 5);
 
-  // ros::Publisher pubTravelingDis = nh.advertise<std_msgs::Float32> ("/traveling_distance", 5);
-  // pubTravelingDisPtr = &pubTravelingDis;
   pubTravelingDisPtr = nh->create_publisher<std_msgs::msg::Float32>("/traveling_distance", 5);
 
-  // ros::Publisher pubTimeDuration = nh.advertise<std_msgs::Float32> ("/time_duration", 5);
-  // pubTimeDurationPtr = &pubTimeDuration;
   pubTimeDurationPtr = nh->create_publisher<std_msgs::msg::Float32>("/time_duration", 5);
-
-  //ros::Publisher pubRuntime = nh.advertise<std_msgs::Float32> ("/runtime", 5);
 
   overallMapDwzFilter.setLeafSize(overallMapVoxelSize, overallMapVoxelSize, overallMapVoxelSize);
   exploredAreaDwzFilter.setLeafSize(exploredAreaVoxelSize, exploredAreaVoxelSize, exploredAreaVoxelSize);
@@ -317,16 +293,12 @@ int main(int argc, char** argv)
   metricFilePtr = fopen(metricFile.c_str(), "w");
   trajFilePtr = fopen(trajFile.c_str(), "w");
 
-  // ros::Rate rate(100);
-  // bool status = ros::ok();
   rclcpp::Rate rate(100);
   bool status = rclcpp::ok();
   while (status) {
-    // ros::spinOnce();
     rclcpp::spin_some(nh);
     overallMapDisplayCount++;
     if (overallMapDisplayCount >= 100 * overallMapDisplayInterval) {
-      // overallMap2.header.stamp = ros::Time().fromSec(systemTime);
       overallMap2.header.stamp = rclcpp::Time(static_cast<uint64_t>(systemTime * 1e9));
       overallMap2.header.frame_id = "map";
       pubOverallMap->publish(overallMap2);
@@ -334,7 +306,6 @@ int main(int argc, char** argv)
       overallMapDisplayCount = 0;
     }
 
-    // status = ros::ok();
     status = rclcpp::ok();
     rate.sleep();
   }

@@ -147,8 +147,7 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
 
 // registered laser scan callback function
 void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2) {
-  laserCloudTime = std::chrono::duration<double>(std::chrono::nanoseconds(laserCloud2->header.stamp.nanosec)).count();
-  // https://github.com/ros2/rclcpp/pull/526
+  laserCloudTime = rclcpp::Time(laserCloud2->header.stamp).seconds();
   if (!systemInited) {
     systemInitTime = laserCloudTime;
     systemInited = true;
@@ -199,9 +198,6 @@ void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis) {
 }
 
 int main(int argc, char **argv) {
-  // ros::init(argc, argv, "terrainAnalysis");
-  // ros::NodeHandle nh;
-  // ros::NodeHandle nhPrivate = ros::NodeHandle("~");
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
 
@@ -257,25 +253,15 @@ int main(int argc, char **argv) {
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
 
-  // ros::Subscriber subOdometry =
-  //     nh.subscribe<nav_msgs::Odometry>("/state_estimation", 5, odometryHandler);
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
-  // ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(
-  //     "/registered_scan", 5, laserCloudHandler);
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
 
-  // ros::Subscriber subJoystick =
-  //     nh.subscribe<sensor_msgs::Joy>("/joy", 5, joystickHandler);
   auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
 
 
-  // ros::Subscriber subClearing =
-  //     nh.subscribe<std_msgs::Float32>("/map_clearing", 5, clearingHandler);
   auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/map_clearing", 5, clearingHandler);
 
-  // ros::Publisher pubLaserCloud =
-  //     nh.advertise<sensor_msgs::PointCloud2>("/terrain_map", 2);
   auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map", 2);
 
   for (int i = 0; i < terrainVoxelNum; i++) {
@@ -284,12 +270,9 @@ int main(int argc, char **argv) {
 
   downSizeFilter.setLeafSize(scanVoxelSize, scanVoxelSize, scanVoxelSize);
 
-  // ros::Rate rate(100);
   rclcpp::Rate rate(100);
-  // bool status = ros::ok();
   bool status = rclcpp::ok();
   while (status) {
-    // ros::spinOnce();
     rclcpp::spin_some(nh);
     if (newlaserCloud) {
       newlaserCloud = false;
@@ -689,7 +672,6 @@ int main(int argc, char **argv) {
       // publish points with elevation
       sensor_msgs::msg::PointCloud2 terrainCloud2;
       pcl::toROSMsg(*terrainCloudElev, terrainCloud2);
-      // terrainCloud2.header.stamp = ros::Time().fromSec(laserCloudTime);
       terrainCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
       terrainCloud2.header.frame_id = "map";
       pubLaserCloud->publish(terrainCloud2);
