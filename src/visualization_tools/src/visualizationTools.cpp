@@ -246,9 +246,9 @@ int main(int argc, char** argv)
   nh->get_parameter("exploredAreaDisplayInterval", exploredAreaDisplayInterval);
 
   // No direct replacement present for $(find pkg) in ROS2. Edit file path.
-  metricFile.replace(metricFile.find("/install/"),8,"/src");
-  trajFile.replace(trajFile.find("/install/"),8,"/src");
-  mapFile.replace(mapFile.find("/install/"),8,"/src");
+  metricFile.replace(metricFile.find("/install/"), 8, "/src");
+  trajFile.replace(trajFile.find("/install/"), 8, "/src");
+  mapFile.replace(mapFile.find("/install/"), 8, "/src");
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);

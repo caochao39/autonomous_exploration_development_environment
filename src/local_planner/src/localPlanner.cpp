@@ -583,7 +583,7 @@ int main(int argc, char** argv)
   nh->get_parameter("goalY", goalY);
 
   // No direct replacement for $(find pkg) in ROS2.
-  pathFolder.replace(pathFolder.find("/install/"),8,"/src");
+  pathFolder.replace(pathFolder.find("/install/"), 8, "/src");
   
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -612,7 +612,7 @@ int main(int argc, char** argv)
   auto pubFreePaths = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/free_paths", 2);
   #endif
 
-  //ros::Publisher pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2> ("/stacked_scans", 2);
+  //auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2> ("/stacked_scans", 2);
 
   printf ("\nReading path files.\n");
 
@@ -979,11 +979,11 @@ int main(int argc, char** argv)
         #endif
       }
 
-      /*sensor_msgs::PointCloud2 plannerCloud2;
+      /*sensor_msgs::msg::PointCloud2 plannerCloud2;
       pcl::toROSMsg(*plannerCloudCrop, plannerCloud2);
-      plannerCloud2.header.stamp = ros::Time().fromSec(odomTime);
+      plannerCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
       plannerCloud2.header.frame_id = "vehicle";
-      pubLaserCloud.publish(plannerCloud2);*/
+      pubLaserCloud->publish(plannerCloud2);*/
     }
 
     status = rclcpp::ok();
