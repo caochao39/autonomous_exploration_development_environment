@@ -139,9 +139,6 @@ void scanHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr scanIn)
   float vehicleRecX = vehicleX;
   float vehicleRecY = vehicleY;
   float vehicleRecZ = vehicleZ;
-  float vehicleRecRoll = vehicleRoll;
-  float vehicleRecPitch = vehiclePitch;
-  float vehicleRecYaw = vehicleYaw;
   float terrainRecRoll = terrainRoll;
   float terrainRecPitch = terrainPitch;
 
@@ -151,9 +148,6 @@ void scanHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr scanIn)
     vehicleRecX = vehicleXStack[odomRecIDPointer];
     vehicleRecY = vehicleYStack[odomRecIDPointer];
     vehicleRecZ = vehicleZStack[odomRecIDPointer];
-    vehicleRecRoll = vehicleRollStack[odomRecIDPointer];
-    vehicleRecPitch = vehiclePitchStack[odomRecIDPointer];
-    vehicleRecYaw = vehicleYawStack[odomRecIDPointer];
     terrainRecRoll = terrainRollStack[odomRecIDPointer];
     terrainRecPitch = terrainPitchStack[odomRecIDPointer];
   }
