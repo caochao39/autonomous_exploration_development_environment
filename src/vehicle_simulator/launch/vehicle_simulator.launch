@@ -43,7 +43,7 @@ def generate_launch_description():
 
   declare_sensorOffsetX = DeclareLaunchArgument('sensorOffsetX', default_value='0.0', description='')
   declare_sensorOffsetY = DeclareLaunchArgument('sensorOffsetY', default_value='0.0', description='')
-  declare_vehicleHeight = DeclareLaunchArgument('vehicleHeight', default_value='0.75', description='')
+  declare_vehicleHeight = DeclareLaunchArgument('vehicleHeight', default_value='0.5', description='')
   declare_cameraOffsetZ = DeclareLaunchArgument('cameraOffsetZ', default_value='0.0', description='')
   declare_vehicleX = DeclareLaunchArgument('vehicleX', default_value='0.0', description='')
   declare_vehicleY = DeclareLaunchArgument('vehicleY', default_value='0.0', description='')
@@ -52,11 +52,11 @@ def generate_launch_description():
   declare_vehicleYaw = DeclareLaunchArgument('vehicleYaw', default_value='0.0', description='')
   declare_terrainVoxelSize = DeclareLaunchArgument('terrainVoxelSize', default_value='0.05', description='')
   declare_groundHeightThre = DeclareLaunchArgument('groundHeightThre', default_value='0.1', description='')
-  declare_adjustZ = DeclareLaunchArgument('adjustZ', default_value='true', description='')
+  declare_adjustZ = DeclareLaunchArgument('adjustZ', default_value='false', description='')
   declare_terrainRadiusZ = DeclareLaunchArgument('terrainRadiusZ', default_value='1.0', description='')
   declare_minTerrainPointNumZ = DeclareLaunchArgument('minTerrainPointNumZ', default_value='5', description='')
   declare_smoothRateZ = DeclareLaunchArgument('smoothRateZ', default_value='0.5', description='')
-  declare_adjustIncl = DeclareLaunchArgument('adjustIncl', default_value='true', description='')
+  declare_adjustIncl = DeclareLaunchArgument('adjustIncl', default_value='false', description='')
   declare_terrainRadiusIncl = DeclareLaunchArgument('terrainRadiusIncl', default_value='2.0', description='')
   declare_minTerrainPointNumIncl = DeclareLaunchArgument('minTerrainPointNumIncl', default_value='200', description='')
   declare_smoothRateIncl = DeclareLaunchArgument('smoothRateIncl', default_value='0.5', description='')
@@ -103,13 +103,13 @@ def generate_launch_description():
     output='screen',
   )
 
-  camera_xacro = os.path.join(get_package_share_directory('vehicle_simulator'), 'urdf', 'camera.urdf.xacro')
-  spawn_camera = Node(
+  rgbd_camera_xacro = os.path.join(get_package_share_directory('vehicle_simulator'), 'urdf', 'rgbd_camera.urdf.xacro')
+  spawn_rgbd_camera = Node(
     package='gazebo_ros', 
     executable='spawn_entity.py',
     arguments=[
-      '-file', camera_xacro,
-      '-entity', 'camera'
+      '-file', rgbd_camera_xacro,
+      '-entity', 'rgbd_camera'
       ],
       output='screen'
   )
@@ -199,7 +199,7 @@ def generate_launch_description():
   ld.add_action(start_lidar_state_publisher)
   ld.add_action(spawn_lidar)
   ld.add_action(spawn_robot)
-  ld.add_action(spawn_camera)
+  ld.add_action(spawn_rgbd_camera)
   ld.add_action(start_joy)
   ld.add_action(delayed_start_vehicle_simulator)
 

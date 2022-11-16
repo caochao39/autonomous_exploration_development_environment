@@ -4,7 +4,7 @@
   <link name="lidar" />
 
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-  <xacro:VLP-16 parent="lidar" name="velodyne" topic="/velodyne_points" hz="6.3" samples="350" min_range="0.1">
+  <xacro:VLP-16 parent="lidar" name="velodyne" topic="/velodyne_points" hz="6.3" samples="350" min_range="0.01">
     <origin xyz="0 0 0" rpy="0 0 0" />
   </xacro:VLP-16>
 

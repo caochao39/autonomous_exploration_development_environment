@@ -376,7 +376,7 @@ int main(int argc, char** argv)
   odomTrans.frame_id_ = "map";
 
   gazebo_msgs::msg::EntityState cameraState;
-  cameraState.name = "camera";
+  cameraState.name = "rgbd_camera";
   gazebo_msgs::msg::EntityState lidarState;
   lidarState.name = "lidar";
   gazebo_msgs::msg::EntityState robotState;
