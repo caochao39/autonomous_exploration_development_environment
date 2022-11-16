@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="segmentation_proc" exec="segmentationProc" name="segmentationProc" output="screen">
+    <param name="seg_file_dir" value="$(find-pkg-share vehicle_simulator)/mesh/matterport/segmentations/matterport.house" />
+    <param name="segDisplayInterval" value="2" />
+  </node>
+
+</launch>
