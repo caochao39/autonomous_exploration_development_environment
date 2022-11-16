@@ -388,8 +388,7 @@ int main(int argc, char** argv)
   terrainDwzFilter.setLeafSize(terrainVoxelSize, terrainVoxelSize, terrainVoxelSize);
 
   printf("\nSimulation started.\n\n");
-  bool initTime = false;
-  rclcpp::Time odomTimeRec;
+  
   rclcpp::Rate rate(200);
   bool status = rclcpp::ok();
   while (status)
@@ -413,14 +412,8 @@ int main(int argc, char** argv)
                 0.005 * vehicleYawRate * (cos(vehicleYaw) * sensorOffsetX - sin(vehicleYaw) * sensorOffsetY);
     vehicleZ = terrainZ + vehicleHeight;
 
-    if (initTime) odomTimeRec = odomTime;
-    else 
-    {
-      odomTimeRec = rclcpp::Time(0,0,RCL_ROS_TIME);
-      initTime = true;
-    }
     odomTime = nh->now();
-    if (odomTime == odomTimeRec) odomTime += rclcpp::Duration::from_seconds(0.005);
+    
     odomSendIDPointer = (odomSendIDPointer + 1) % stackNum;
     odomTimeStack[odomSendIDPointer] = odomTime.seconds();
     vehicleXStack[odomSendIDPointer] = vehicleX;
