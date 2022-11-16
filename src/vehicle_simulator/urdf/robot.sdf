@@ -36,7 +36,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__left_front_wheel_visual_2'>
-        <pose>0.1 -0.125 -0.3 1.57 0 0</pose>
+        <pose>0.1 -0.125 -0.45 1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.05</length>
@@ -51,7 +51,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__left_rear_wheel_visual_3'>
-        <pose>-0.1 -0.125 -0.3 1.57 0 0</pose>
+        <pose>-0.1 -0.125 -0.45 1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.05</length>
@@ -66,7 +66,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__right_rear_wheel_visual_4'>
-        <pose>-0.1 0.125 -0.3 -1.57 0 0</pose>
+        <pose>-0.1 0.125 -0.45 -1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.05</length>
@@ -81,7 +81,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__right_front_wheel_visual_5'>
-        <pose>0.1 0.125 -0.3 -1.57 0 0</pose>
+        <pose>0.1 0.125 -0.45 -1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.05</length>
