@@ -2,19 +2,19 @@
   <model name='example'>
     <link name='base_origin'>
       <inertial>
-        <pose>0 0 -0.5125 0 -0 0</pose>
-        <mass>6e-05</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>1.0</mass>
         <inertia>
-          <ixx>9.94687e-06</ixx>
+          <ixx>0.1</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>9.04688e-06</iyy>
-          <iyz>-1.58819e-23</iyz>
-          <izz>1.01e-05</izz>
+          <iyy>0.1</iyy>
+          <iyz>0</iyz>
+          <izz>0.1</izz>
         </inertia>
       </inertial>
       <visual name='base_origin_visual'>
-        <pose>0 0 0 0 -0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
             <size>0.01 0.01 0.01</size>
@@ -22,7 +22,7 @@
         </geometry>
       </visual>
       <visual name='base_origin_fixed_joint_lump__base_link_visual_1'>
-        <pose>0 0 -0.5 0 -0 0</pose>
+        <pose>0 0 -0.5 0 0 0</pose>
         <geometry>
           <box>
             <size>0.6 0.4 0.3</size>
@@ -36,7 +36,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__left_front_wheel_visual_2'>
-        <pose>0.2 -0.25 -0.6 1.57 -0 0</pose>
+        <pose>0.2 -0.25 -0.6 1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.1</length>
@@ -51,7 +51,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__left_rear_wheel_visual_3'>
-        <pose>-0.2 -0.25 -0.6 1.57 -0 0</pose>
+        <pose>-0.2 -0.25 -0.6 1.57 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.1</length>
@@ -96,7 +96,7 @@
         </material>
       </visual>
       <visual name='base_origin_fixed_joint_lump__lidar_holder_visual_6'>
-        <pose>0 0 -0.175 0 -0 0</pose>
+        <pose>0 0 -0.175 0 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.35</length>
