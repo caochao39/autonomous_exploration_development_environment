@@ -358,6 +358,9 @@ int main(int argc, char** argv)
 
   auto pubObjectMarker = nh->create_publisher<visualization_msgs::msg::MarkerArray>("/object_segmentation_markers", 10);
 
+  // No direct replacement for $(find pkg) in ROS2.
+  seg_file_dir.replace(seg_file_dir.find("/install/"), 8, "/src");
+
   // read segmentation file
   if (readSegmentationFile(seg_file_dir.c_str()) != 1) {
     printf("\nCouldn't read segmentation file.\n");
