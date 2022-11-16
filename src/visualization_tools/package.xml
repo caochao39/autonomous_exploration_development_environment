@@ -1,13 +1,9 @@
-<?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>visualization_tools</name>
   <version>0.0.1</version>
   <description>Visulization Tools</description>
   <maintainer email="hongbiaz@cmu.edu">Hongbiao Zhu</maintainer>
   <license>BSD</license>
-
-  <author>Hongbiao Zhu</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>

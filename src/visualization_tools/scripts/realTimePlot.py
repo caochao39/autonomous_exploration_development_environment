@@ -103,8 +103,6 @@ class Listener(Node):
         timer_period = 0.01  # 100hz 
         self.timer = self.create_timer(timer_period, self.plot_callback)
 
-
-    
     def plot_callback(self):
         global time_duration, start_time_duration, explored_volume, traveling_distance, run_time, max_explored_volume, max_traveling_diatance, max_run_time, time_list1, time_list2, time_list3, run_time_list, explored_volume_list, traveling_distance_list
         self.count = self.count + 1
@@ -141,7 +139,6 @@ class Listener(Node):
             self.fig.canvas.draw()
             plt.pause(0.01)
 
-
 def main(args=None):
     rclpy.init(args=args)
 
@@ -154,7 +151,6 @@ def main(args=None):
     # when the garbage collector destroys the node object)
     listener.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

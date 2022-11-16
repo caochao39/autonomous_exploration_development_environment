@@ -29,7 +29,6 @@
 #include "rmw/types.h"
 #include "rmw/qos_profiles.h"
 
-
 using namespace std;
 
 const double PI = 3.1415926;

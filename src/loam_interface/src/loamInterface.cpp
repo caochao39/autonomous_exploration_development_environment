@@ -30,7 +30,6 @@ nav_msgs::msg::Odometry odomData;
 tf2::Stamped<tf2::Transform> odomTrans;
 geometry_msgs::msg::TransformStamped transformTfGeom ; 
 
-
 class LoamInterface : public rclcpp::Node
 {
 public:

@@ -107,7 +107,6 @@ int main(int argc, char** argv)
   message_filters::Subscriber<nav_msgs::msg::Odometry> subOdometry;
   message_filters::Subscriber<sensor_msgs::msg::PointCloud2> subLaserCloud;
 
-
   typedef message_filters::sync_policies::ApproximateTime<nav_msgs::msg::Odometry, sensor_msgs::msg::PointCloud2> syncPolicy;
   typedef message_filters::Synchronizer<syncPolicy> Sync;
   boost::shared_ptr<Sync> sync_;
