@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>loam_interface</name>
-  <version>0.0.0</version>
+  <version>0.0.2</version>
   <description>Loam Interface</description>
   <maintainer email="ndamis@cmu.edu">Ninaad Damis</maintainer>
   <license>BSD</license>
