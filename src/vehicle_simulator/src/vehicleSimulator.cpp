@@ -361,8 +361,7 @@ int main(int argc, char** argv)
 
   auto pubVehicleOdom = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation", 5);
 
-  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client =
-    nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
+  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client = nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
 
   auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
 
@@ -443,7 +442,6 @@ int main(int argc, char** argv)
     pubVehicleOdom->publish(odomData);
 
     // publish 200Hz tf messages
-    // odomTrans.stamp_ = odomTime;
     odomTrans.setRotation(tf2::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w));
     odomTrans.setOrigin(tf2::Vector3(vehicleX, vehicleY, vehicleZ));
     transformTfGeom = tf2::toMsg(odomTrans);
