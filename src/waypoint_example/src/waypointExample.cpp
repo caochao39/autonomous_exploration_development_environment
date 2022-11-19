@@ -188,10 +188,9 @@ int main(int argc, char** argv)
   waypointMsgs.header.frame_id = "map";
   
   auto pubSpeed = nh->create_publisher<std_msgs::msg::Float32>("/speed", 5);
-
   std_msgs::msg::Float32 speedMsgs;
+  
   auto pubBoundary = nh->create_publisher<geometry_msgs::msg::PolygonStamped>("/navigation_boundary", 5);
-
   geometry_msgs::msg::PolygonStamped boundaryMsgs;
   boundaryMsgs.header.frame_id = "map";
 
