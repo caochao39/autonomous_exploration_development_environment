@@ -128,6 +128,7 @@ def generate_launch_description():
   ld.add_action(start_vehicle_simulator)
   ld.add_action(start_sensor_scan_generation)
   ld.add_action(start_visualization_tools)
+  ld.add_action(start_segmentation_proc)
   ld.add_action(delayed_start_rviz)
 
   return ld
