@@ -360,11 +360,6 @@ int main(int argc, char** argv)
   auto subSpeed = nh->create_subscription<geometry_msgs::msg::TwistStamped>("/cmd_vel", 5, speedHandler);
 
   auto pubVehicleOdom = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation", 5);
-
-  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client = nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
-
-  auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
-
   nav_msgs::msg::Odometry odomData;
   odomData.header.frame_id = "map";
   odomData.child_frame_id = "sensor";
@@ -381,8 +376,10 @@ int main(int argc, char** argv)
   gazebo_msgs::msg::EntityState robotState;
   robotState.name = "robot";
 
+  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client = nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
+  auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
+
   pubScanPointer = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/registered_scan", 2);
-  tf2::Quaternion quat_tf;
 
   terrainDwzFilter.setLeafSize(terrainVoxelSize, terrainVoxelSize, terrainVoxelSize);
 
@@ -425,6 +422,7 @@ int main(int argc, char** argv)
     terrainPitchStack[odomSendIDPointer] = terrainPitch;
 
     // publish 200Hz odometry messages
+    tf2::Quaternion quat_tf;
     quat_tf.setRPY(vehicleRoll, vehiclePitch, vehicleYaw);
     geometry_msgs::msg::Quaternion geoQuat;
     tf2::convert(quat_tf, geoQuat);
