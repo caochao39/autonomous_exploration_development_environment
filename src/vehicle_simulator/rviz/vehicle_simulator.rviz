@@ -44,7 +44,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rgbd_camera/image_raw
+        Value: /rgbd_camera/color/image
       Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
@@ -58,7 +58,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rgbd_camera/depth/image_raw
+        Value: /rgbd_camera/depth/image
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
