@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
-import rospy
+import rclpy
+import sys
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image as ROS_Image
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+import transforms3d
 
 import argparse
 
@@ -126,7 +127,7 @@ class DemoRunner:
         color_obs = obs["color_sensor"]
         color_img = Image.fromarray(color_obs, mode="RGBA")
         self.color_image.data = np.array(color_img.convert("RGB")).tobytes()
-        self.color_image.header.stamp = rospy.Time.from_sec(self.time)
+        self.color_image.header.stamp = self.time_stamp
         self.color_image_pub.publish(self.color_image)
 
     def publish_semantic_observation(self, obs):
@@ -135,14 +136,14 @@ class DemoRunner:
         semantic_img.putpalette(d3_40_colors_rgb.flatten())
         semantic_img.putdata((semantic_obs.flatten() % 40).astype(np.uint8))
         self.semantic_image.data = np.array(semantic_img.convert("RGB")).tobytes()
-        self.semantic_image.header.stamp = rospy.Time.from_sec(self.time)
+        self.semantic_image.header.stamp = self.time_stamp
         self.semantic_image_pub.publish(self.semantic_image)
 
     def publish_depth_observation(self, obs):
         depth_obs = obs["depth_sensor"]
         depth_img = Image.fromarray((depth_obs / 10 * 255).astype(np.uint8), mode="L")
         self.depth_image.data = np.array(depth_img.convert("L")).tobytes()
-        self.depth_image.header.stamp = rospy.Time.from_sec(self.time)
+        self.depth_image.header.stamp = self.time_stamp
         self.depth_image_pub.publish(self.depth_image)
 
     def init_common(self):
@@ -157,9 +158,10 @@ class DemoRunner:
             self._sim.recompute_navmesh(self._sim.pathfinder, navmesh_settings)
 
     def state_estimation_callback(self, msg):
-        self.time = msg.header.stamp.to_sec()
+        # self.time = msg.header.stamp.to_sec()
+        self.time_stamp = msg.header.stamp
         orientation = msg.pose.pose.orientation
-        (self.camera_roll, self.camera_pitch, self.camera_yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+        (self.camera_roll, self.camera_pitch, self.camera_yaw) = transforms3d.euler.quat2euler([orientation.w,orientation.x, orientation.y, orientation.z])
         self.camera_x = msg.pose.pose.position.x
         self.camera_y = msg.pose.pose.position.y
         self.camera_z = msg.pose.pose.position.z
@@ -167,10 +169,13 @@ class DemoRunner:
     def listener(self):
         start_state = self.init_common()
 
-        rospy.init_node("habitat_online")
-        
-        rospy.Subscriber("/state_estimation", Odometry, self.state_estimation_callback)
+        # rospy.init_node("habitat_online")
+        rclpy.init(args=sys.argv)
+        node = rclpy.create_node('habitat_online')
+        # rospy.Subscriber("/state_estimation", Odometry, self.state_estimation_callback)
+        node.create_subscription(Odometry, '/state_estimation', self.state_estimation_callback,2)
         self.time = 0;
+        self.time_stamp = node.get_clock().now().to_msg()   
         self.camera_roll = 0
         self.camera_pitch = 0
         self.camera_yaw = 0
@@ -179,7 +184,7 @@ class DemoRunner:
         self.camera_z = 0.5
 
         if self._sim_settings["color_sensor"]:
-            self.color_image_pub = rospy.Publisher("/habitat_camera/color/image", ROS_Image, queue_size=2)
+            self.color_image_pub = node.create_publisher(ROS_Image,"/habitat_camera/color/image", 2)
             self.color_image = ROS_Image()
             self.color_image.header.frame_id = "habitat_camera"
             self.color_image.height = settings["height"]
@@ -189,7 +194,7 @@ class DemoRunner:
             self.color_image.is_bigendian = False
 
         if self._sim_settings["depth_sensor"]:
-            self.depth_image_pub = rospy.Publisher("/habitat_camera/depth/image", ROS_Image, queue_size=2)
+            self.depth_image_pub = node.create_publisher(ROS_Image,"/habitat_camera/depth/image", 2)
             self.depth_image = ROS_Image()
             self.depth_image.header.frame_id = "habitat_camera"
             self.depth_image.height = settings["height"]
@@ -199,7 +204,7 @@ class DemoRunner:
             self.depth_image.is_bigendian = False
 
         if self._sim_settings["semantic_sensor"]:
-            self.semantic_image_pub = rospy.Publisher("/habitat_camera/semantic/image", ROS_Image, queue_size=2)
+            self.semantic_image_pub = node.create_publisher(ROS_Image,"/habitat_camera/semantic/image", 2)
             self.semantic_image = ROS_Image()
             self.semantic_image.header.frame_id = "habitat_camera"
             self.semantic_image.height = settings["height"]
@@ -208,8 +213,9 @@ class DemoRunner:
             self.semantic_image.step = 3 * self.color_image.width
             self.semantic_image.is_bigendian = False
 
-        r = rospy.Rate(default_sim_settings["frame_rate"])
-        while not rospy.is_shutdown():
+        r = node.create_rate(default_sim_settings["frame_rate"])
+        while rclpy.ok():
+            rclpy.spin_once(node)
             roll = -self.camera_roll
             pitch = self.camera_pitch
             yaw = 1.5708 - self.camera_yaw
@@ -238,9 +244,9 @@ class DemoRunner:
                 self.publish_semantic_observation(observations)
 
             state = self._sim.last_state()
-            print("Publishing at time: " + str(self.time))
-            r.sleep()
 
+        node.destroy_node()
+        rclpy.shutdown()
         self._sim.close()
         del self._sim
 
