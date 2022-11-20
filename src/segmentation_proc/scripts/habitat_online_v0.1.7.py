@@ -4,7 +4,6 @@ import rclpy
 import sys
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image as ROS_Image
-# from tf_transformations import euler_from_quaternion, quaternion_from_euler
 import transforms3d
 
 import argparse
@@ -158,7 +157,6 @@ class DemoRunner:
             self._sim.recompute_navmesh(self._sim.pathfinder, navmesh_settings)
 
     def state_estimation_callback(self, msg):
-        # self.time = msg.header.stamp.to_sec()
         self.time_stamp = msg.header.stamp
         orientation = msg.pose.pose.orientation
         (self.camera_roll, self.camera_pitch, self.camera_yaw) = transforms3d.euler.quat2euler([orientation.w,orientation.x, orientation.y, orientation.z])
@@ -169,10 +167,8 @@ class DemoRunner:
     def listener(self):
         start_state = self.init_common()
 
-        # rospy.init_node("habitat_online")
         rclpy.init(args=sys.argv)
         node = rclpy.create_node('habitat_online')
-        # rospy.Subscriber("/state_estimation", Odometry, self.state_estimation_callback)
         node.create_subscription(Odometry, '/state_estimation', self.state_estimation_callback,2)
         self.time = 0;
         self.time_stamp = node.get_clock().now().to_msg()   
@@ -244,7 +240,6 @@ class DemoRunner:
                 self.publish_semantic_observation(observations)
 
             state = self._sim.last_state()
-            # r.sleep()
 
         node.destroy_node()
         rclpy.shutdown()
