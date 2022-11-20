@@ -90,7 +90,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rgbd_camera/points
+        Value: /rgbd_camera/depth/points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
