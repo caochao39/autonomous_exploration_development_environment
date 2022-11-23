@@ -160,8 +160,9 @@ class DemoRunner(Node):
             self.semantic_image.encoding = "rgb8"
             self.semantic_image.step = 3 * self.color_image.width
             self.semantic_image.is_bigendian = False
-
-        timer_period = 0.05  # 20hz 
+        
+        rate = default_sim_settings["frame_rate"]
+        timer_period = 1 / rate 
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def set_sim_settings(self, sim_settings):
