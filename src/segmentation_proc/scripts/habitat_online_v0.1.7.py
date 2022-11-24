@@ -117,9 +117,12 @@ class ABTestGroup(Enum):
 class DemoRunner(Node):
     def __init__(self, sim_settings, simulator_demo_type):
         super().__init__('habitat_online')
+
         if simulator_demo_type == DemoRunnerType.EXAMPLE:
             self.set_sim_settings(sim_settings)
+
         start_state = self.init_common()
+
         self._demo_type = simulator_demo_type
         self.time = 0;
         self.time_stamp = self.get_clock().now().to_msg()   
@@ -129,6 +132,7 @@ class DemoRunner(Node):
         self.camera_x = 0
         self.camera_y = 0
         self.camera_z = 0.5
+
         self.create_subscription(Odometry, '/state_estimation', self.state_estimation_callback,2)
 
         if self._sim_settings["color_sensor"]:
