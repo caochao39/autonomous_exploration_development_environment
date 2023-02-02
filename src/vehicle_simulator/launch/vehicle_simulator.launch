@@ -47,6 +47,9 @@
 
   <param name="lidar_description" command="$(find xacro)/xacro --inorder '$(find vehicle_simulator)/urdf/lidar.urdf.xacro'" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_lidar" args="-urdf -param /lidar_description -model lidar"/>
+  
+  <param name="laser_2d_description" command="$(find xacro)/xacro --inorder '$(find vehicle_simulator)/urdf/laser_2d.urdf.xacro'" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_laser_2d" args="-urdf -param /laser_2d_description -model laser_2d"/>
 
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find vehicle_simulator)/urdf/robot.urdf.xacro'" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_robot" args="-urdf -param /robot_description -model robot"/>
