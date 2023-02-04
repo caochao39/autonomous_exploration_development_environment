@@ -41,11 +41,6 @@
     <arg name="world_name" value="$(arg world_name)"/>
   </include>
 
-  <node name="pointcloud_to_laserscan" pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node">
-    <remap from="/cloud_in" to="/base_scan_points"/>
-    <remap from="/scan" to="/base_scan"/>
-  </node>
-
   <node launch-prefix="nice" pkg="rviz" type="rviz" name="rvizGA" args="-d $(find vehicle_simulator)/rviz/vehicle_simulator.rviz" respawn="true"/>
 
 </launch>

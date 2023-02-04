@@ -1,6 +1,6 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="example">
 
-  <link name="laser_2d">
+  <!-- <link name="laser_2d">
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
@@ -20,7 +20,7 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
     </inertial>
-  </link>
+  </link> -->
 
   <!-- <joint name="laser_2d_joint" type="fixed">
     <axis xyz="0 1 0" />
@@ -29,8 +29,8 @@
     <child link="laser_2d"/>
   </joint> -->
   
-  <gazebo reference="laser_2d">
-    <sensor type="ray" name="laser_2d">
+  <gazebo reference="hokuyo">
+    <sensor type="ray" name="head_hokuyo_sensor">
       <pose>0 0 0 0 0 0</pose>
       <visualize>false</visualize>
       <update_rate>10</update_rate>
@@ -60,7 +60,7 @@
       </ray>
       <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
         <topicName>/base_scan</topicName>
-        <frameName>laser_2d</frameName>
+        <frameName>hokuyo</frameName>
       </plugin>
     </sensor>
   </gazebo>

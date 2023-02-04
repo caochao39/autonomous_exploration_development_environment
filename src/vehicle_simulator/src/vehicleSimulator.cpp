@@ -59,7 +59,6 @@ int systemInitCount = 0;
 bool systemInited = false;
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr scanData(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr scan2DData(new pcl::PointCloud<pcl::PointXYZI>());
 pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloud(new pcl::PointCloud<pcl::PointXYZI>());
 pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudIncl(new pcl::PointCloud<pcl::PointXYZI>());
 pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudDwz(new pcl::PointCloud<pcl::PointXYZI>());
@@ -101,81 +100,6 @@ ros::Publisher *pubScanPointer = NULL;
 ros::Publisher *pubScan2DPointer = NULL;
 
 laser_geometry::LaserProjection projector_;
-
-void scan2DHandler(const sensor_msgs::LaserScan::ConstPtr &scanIn) {
-  if (!systemInited) {
-    systemInitCount++;
-    if (systemInitCount > systemDelay) {
-      systemInited = true;
-    }
-    return;
-  }
-
-  double scanTime = scanIn->header.stamp.toSec();
-  
-  sensor_msgs::PointCloud2 cloud;
-  projector_.projectLaser(*scanIn, cloud);
-  
-  scan2DData->clear();
-  pcl::fromROSMsg(cloud, *scan2DData);
-
-  double odomRecTime = odomTime.toSec();
-  float vehicleRecX = vehicleX;
-  float vehicleRecY = vehicleY;
-  float vehicleRecZ = vehicleZ;
-  float vehicleRecRoll = vehicleRoll;
-  float vehicleRecPitch = vehiclePitch;
-  float vehicleRecYaw = vehicleYaw;
-  float terrainRecRoll = terrainRoll;
-  float terrainRecPitch = terrainPitch;
-
-  if (use_gazebo_time)
-  {
-    odomRecTime = odomTimeStack[odomRecIDPointer];
-    vehicleRecX = vehicleXStack[odomRecIDPointer];
-    vehicleRecY = vehicleYStack[odomRecIDPointer];
-    vehicleRecZ = vehicleZStack[odomRecIDPointer];
-    vehicleRecRoll = vehicleRollStack[odomRecIDPointer];
-    vehicleRecPitch = vehiclePitchStack[odomRecIDPointer];
-    vehicleRecYaw = vehicleYawStack[odomRecIDPointer];
-    terrainRecRoll = terrainRollStack[odomRecIDPointer];
-    terrainRecPitch = terrainPitchStack[odomRecIDPointer];
-  }
-
-  float sinTerrainRecRoll = sin(terrainRecRoll);
-  float cosTerrainRecRoll = cos(terrainRecRoll);
-  float sinTerrainRecPitch = sin(terrainRecPitch);
-  float cosTerrainRecPitch = cos(terrainRecPitch);
-
-
-  int scanDataSize = scan2DData->points.size();
-  for (int i = 0; i < scanDataSize; i++)
-  {
-    float pointX1 = scan2DData->points[i].x;
-    float pointY1 = scan2DData->points[i].y * cosTerrainRecRoll - scan2DData->points[i].z * sinTerrainRecRoll;
-    float pointZ1 = scan2DData->points[i].y * sinTerrainRecRoll + scan2DData->points[i].z * cosTerrainRecRoll;
-
-    float pointX2 = pointX1 * cosTerrainRecPitch + pointZ1 * sinTerrainRecPitch;
-    float pointY2 = pointY1;
-    float pointZ2 = -pointX1 * sinTerrainRecPitch + pointZ1 * cosTerrainRecPitch;
-
-    float pointX3 = pointX2 + vehicleRecX;
-    float pointY3 = pointY2 + vehicleRecY;
-    float pointZ3 = pointZ2 + vehicleRecZ;
-
-    scan2DData->points[i].x = pointX3;
-    scan2DData->points[i].y = pointY3;
-    scan2DData->points[i].z = pointZ3;
-  }
-
-  // publish 10Hz 2d laser scan messages
-  sensor_msgs::PointCloud2 laserScanData2;
-  pcl::toROSMsg(*scan2DData, laserScanData2);
-  laserScanData2.header.stamp = ros::Time().fromSec(odomRecTime);
-  laserScanData2.header.frame_id = "map";
-  pubScan2DPointer->publish(laserScanData2);
-
-}
 
 void scanHandler(const sensor_msgs::PointCloud2::ConstPtr &scanIn) {
   if (!systemInited) {
@@ -409,8 +333,6 @@ int main(int argc, char** argv)
 
   ros::Subscriber subScan = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 2, scanHandler);
 
-  ros::Subscriber subScan2D = nh.subscribe<sensor_msgs::LaserScan>("/base_scan_raw", 2, scan2DHandler);
-
   ros::Subscriber subTerrainCloud = nh.subscribe<sensor_msgs::PointCloud2>("/terrain_map", 2, terrainCloudHandler);
 
   ros::Subscriber subSpeed = nh.subscribe<geometry_msgs::TwistStamped>("/cmd_vel", 5, speedHandler);
@@ -431,8 +353,6 @@ int main(int argc, char** argv)
   cameraState.model_name = "camera";
   gazebo_msgs::ModelState lidarState;
   lidarState.model_name = "lidar";
-  gazebo_msgs::ModelState laser2DState;
-  laser2DState.model_name = "laser_2d";
   gazebo_msgs::ModelState robotState;
   robotState.model_name = "robot";
 
@@ -526,12 +446,6 @@ int main(int argc, char** argv)
     lidarState.pose.position.y = vehicleY;
     lidarState.pose.position.z = vehicleZ;
     pubModelState.publish(lidarState);
-
-    laser2DState.pose.orientation = geoQuat;
-    laser2DState.pose.position.x = vehicleX;
-    laser2DState.pose.position.y = vehicleY;
-    laser2DState.pose.position.z = vehicleZ;
-    pubModelState.publish(laser2DState);
 
     status = ros::ok();
     rate.sleep();
