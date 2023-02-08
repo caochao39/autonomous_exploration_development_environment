@@ -76,6 +76,6 @@
     <param name="maxIncl" value="$(arg maxIncl)" />
   </node>
 
-  <include file="$(find vehicle_simulator)/launch/gmapping.launch"/>
+  <!-- <include file="$(find vehicle_simulator)/launch/gmapping.launch"/> -->
 
 </launch>
